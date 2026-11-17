@@ -1,0 +1,1029 @@
+{
+  "experiment_id": "exp-8-genai-learning-copilot-rct-v1",
+  "hypothesis": "For employees engaged in defined upskilling/reskilling journeys, access to a GenAI-powered learning copilot (grounded in enterprise knowledge, with safety guardrails and optional escalation to human coaches) will measurably increase (a) learning engagement, (b) satisfaction with guidance, and (c) objectively assessed skills progress over 8\u201312 weeks, compared with a well-designed non-AI digital guidance experience, without increasing safety or compliance incidents.",
+  "baseline": {
+    "description": "Digital, non-GenAI guidance for learning and career support delivered through the existing learning experience platform (LXP) or intranet. Employees access static or lightly-personalized resources such as curated pathways, FAQ pages, and human-authored playbooks and may schedule optional 1:1 sessions with human coaches via standard channels, but have no conversational AI assistant.",
+    "key_components": [
+      "Static learning pathways or curricula aligned to the selected upskilling program (e.g., 'Data Literacy for Operations', 'AI-augmented Customer Support').",
+      "Searchable knowledge base (KB) or portal with articles, FAQs, and policy documents.",
+      "Standard recommendation widgets in the LXP (e.g., 'people like you viewed\u2026') without LLM-based conversation or task decomposition.",
+      "Existing feedback mechanisms (NPS or CSAT after courses, quarterly pulse surveys).",
+      "Existing escalation mechanisms to human coaches or HR/L&D (e.g., email alias, calendar links)."
+    ],
+    "eligibility_and_assignment": {
+      "population": "Employees enrolled in a specific upskilling or reskilling program (e.g., customer service representatives in a new GenAI-augmented workflow, or analysts moving into a data literacy track).",
+      "inclusion_criteria": [
+        "Employed in selected business unit(s) and role family(ies).",
+        "Enrolled in the defined learning pathway before the experiment start date.",
+        "Consent to participate in measurement activities where required by policy or regulation."
+      ],
+      "exclusion_criteria": [
+        "Direct reports of core experiment design team members (to reduce bias).",
+        "Employees on performance-improvement plans where additional oversight could confound results.",
+        "Employees without regular access to the digital learning environment (e.g., no corporate device)."
+      ],
+      "assignment_method": "Individual-level randomized controlled trial (RCT) stratified by role, location, and manager. Employees are randomly assigned 1:1 to baseline vs. treatment after stratification, ensuring balanced cohorts on key covariates.",
+      "sample_size_planning": {
+        "effect_size_assumption": "Detect a +10 percentage point increase in course completion rate (e.g., from 55% to 65%) with 80% power and alpha = 0.05.",
+        "approximate_requirements": "Depending on historical variance, expect ~250\u2013400 employees per arm for primary behavioral metrics. Use historical engagement data to refine power calculations before launch."
+      }
+    }
+  },
+  "treatment": {
+    "description": "A GenAI learning copilot embedded in the existing learning experience, providing conversational coaching, contextual recommendations, micro-planning, and just-in-time performance support grounded in enterprise knowledge, with explicit guardrails and escalation options to human coaches.",
+    "key_genai_features": [
+      "Conversational guidance: Natural-language Q&A about the learner\u2019s pathway, skills gaps, and next steps (e.g., 'What should I focus on this week to move toward data analyst?').",
+      "Task and plan generation: Breaking learning objectives into week-level micro-plans (e.g., 'Two 30-minute sessions plus one practice assignment this week').",
+      "Context-aware recommendations: Surfacing relevant courses, internal docs, and practice assignments using retrieval-augmented generation (RAG) over curated enterprise content.",
+      "Career and skills coaching: Explaining how specific skills map to internal roles and opportunities, with clear disclaimers that it does not make binding HR decisions.",
+      "Performance support: On-the-job guidance at the moment of need, such as summarizing policies, checklists, or reference procedures directly from the enterprise KB.",
+      "Escalation: One-click or suggested escalation to human coaches or HR/L&D support for complex, sensitive, or out-of-policy topics (e.g., performance ratings, compensation)."
+    ],
+    "safety_and_guardrails": [
+      "System prompt includes explicit boundaries (no legal/medical/financial advice, no performance rating recommendations, no commitments on behalf of the company).",
+      "RAG restricted to vetted content sources tagged for 'employee-facing guidance'; no access to confidential HR records or personally identifiable performance data.",
+      "PII minimization: Copilot operates on user role/segment and declared goals; it does not ingest performance reviews, health data, or disciplinary records.",
+      "Safety filters: Abuse/toxicity detection, data loss prevention (DLP) patterns for sensitive data, and domain-specific forbidden topics.",
+      "Logging and audit: All conversations are logged with metadata for monitoring, but displayed to analytics teams only in anonymized/aggregated forms per policy.",
+      "Mandatory escalation patterns: For flagged intents (e.g., harassment reporting, mental health crises), the copilot does not attempt to coach but shows approved links and contacts."
+    ],
+    "technical_implementation_overview": {
+      "llm_backend": "Configurable: either a managed API (e.g., OpenAI, Azure OpenAI, Anthropic) or a self-hosted open-source model (e.g., Llama-family) abstracted behind a common interface.",
+      "orchestration_layer": "Python-based service using an orchestration framework (e.g., LangChain or LlamaIndex) deployed as a stateless API with horizontal scaling.",
+      "retrieval_layer": "Vector database (e.g., open-source like Qdrant) plus metadata filters (content type, locale, sensitivity level). Embeddings computed with an open-source model.",
+      "front_end": "Web widget integrated into the existing LXP/intranet (e.g., embedded chat panel or sidecar) plus optional MS Teams/Slack bot interface for performance support.",
+      "identity_and_context": "User identity obtained from SSO (e.g., SAML/OIDC). Context includes role, business unit, enrolled pathways, and learning history where permitted.",
+      "feature_flags": "Experiment flag separating baseline vs. treatment experiences at request-time, integrated with the experimentation platform."
+    }
+  },
+  "workloads": [
+    {
+      "name": "Guided_learning_pathway_support",
+      "description": "Employees progressing through a multi-week structured learning pathway (e.g., 10 modules over 8\u201312 weeks) with assignments and knowledge checks.",
+      "inputs": {
+        "employee_profile": {
+          "role": "Job family / level (e.g., Customer Support Rep L2, Operations Analyst).",
+          "location": "Country/region (for localization and regulatory filters).",
+          "manager_id": "For reporting and monitoring purposes only, not exposed to LLM.",
+          "prior_skill_assessment": "Baseline skill ratings from pre-test or manager assessment, if available.",
+          "enrolled_pathway_id": "Identifier for the specific program and track."
+        },
+        "learning_artifacts": {
+          "modules": "List of modules with objectives, duration, prerequisites.",
+          "assessments": "Quiz items, case exercises, or projects with grading logic.",
+          "practice_assets": "Templates, sample datasets, simulations."
+        },
+        "usage_scenarios": [
+          "Baseline: Employee navigates modules using standard portal navigation and static recommendations; uses FAQs or documents as needed.",
+          "Treatment: Employee can ask the copilot 'how to pace the modules,' 'what to focus on given limited time,' and get inline explanations of concepts referencing curated KB content."
+        ]
+      },
+      "expected_interactions": {
+        "baseline": [
+          "Module browsing and launching courses.",
+          "Reading human-authored guidance on 'how to use this pathway'.",
+          "Occasional search in the portal or KB."
+        ],
+        "treatment": [
+          "Conversational queries about goals and constraints.",
+          "Auto-generated weekly learning plans.",
+          "Clarifying questions about module content or assessment expectations.",
+          "Requests for recommended additional resources tailored to role and assessments."
+        ]
+      }
+    },
+    {
+      "name": "On_the_job_performance_support",
+      "description": "Employees using the system while performing relevant job tasks and seeking quick answers or walkthroughs.",
+      "inputs": {
+        "employee_profile": {
+          "role": "Same structure as above, with additional task tags (e.g., call-handling, report-building).",
+          "tools_in_use": "E.g., CRM system, BI tool, or ticketing platform."
+        },
+        "knowledge_base": {
+          "standard_operating_procedures": "Step-by-step SOPs for tasks.",
+          "reference_guides": "Short how-to guides or FAQs.",
+          "policy_documents": "Relevant policies that must not be paraphrased incorrectly; RAG must link back to source."
+        },
+        "usage_scenarios": [
+          "Baseline: Employee searches KB manually or asks a peer/manager.",
+          "Treatment: Employee asks copilot context-specific questions (e.g., 'What are the steps to handle a ticket escalation?') and receives structured guidance grounded in SOPs."
+        ]
+      },
+      "expected_interactions": {
+        "baseline": [
+          "Portal search and KB article views.",
+          "Email/slack to colleagues for help."
+        ],
+        "treatment": [
+          "Short Q&A sessions with copilot during tasks.",
+          "Copilot summarizing and linking to relevant SOPs.",
+          "Copilot prompting for confirmation when instructions impact compliance."
+        ]
+      }
+    },
+    {
+      "name": "Career_and_skills_coaching",
+      "description": "Employees exploring medium-term career moves and skill-development options related to the selected upskilling program.",
+      "inputs": {
+        "employee_profile": {
+          "role_and_tenure": "Current role, grade, years in role.",
+          "career_interests": "Self-declared target roles or skill domains.",
+          "skills_profile": "Self-assessed or inferred skills where available."
+        },
+        "career_data": {
+          "role_profiles": "Internal descriptions of roles with required skills and levels.",
+          "mobility_policies": "Rules for internal moves, posting visibility, and eligibility.",
+          "learning_assets": "Programs mapped to specific skill or role transitions."
+        },
+        "usage_scenarios": [
+          "Baseline: Employee reads static career framework pages; may schedule a human career-coaching session if offered.",
+          "Treatment: Employee dialogs with copilot about gaps between current skills and target roles, and receives personalized development suggestions with clear disclaimers about non-binding guidance."
+        ]
+      },
+      "expected_interactions": {
+        "baseline": [
+          "Career framework page views.",
+          "Manual review of role descriptions and recommended programs.",
+          "Occasional human-coach appointments."
+        ],
+        "treatment": [
+          "Copilot-assisted mapping from interests to roles and skills.",
+          "Generated skill-gap summaries referencing official role profiles.",
+          "Suggested learning plans aligned to mobility policies.",
+          "Escalation suggestions for nuanced cases (e.g., relocation, compensation)."
+        ]
+      }
+    }
+  ],
+  "controls": {
+    "randomization_and_blinding": {
+      "unit_of_randomization": "Individual employee, with stratification by role, location, and manager to maintain balance.",
+      "allocation_ratio": "1:1 (baseline : treatment) unless sample size constraints require minor adjustment.",
+      "blinding": [
+        "Participants: Partial. Employees are informed that a 'new guidance experience' is being trialed but not explicitly told they are in baseline vs. treatment.",
+        "Managers: Not explicitly informed which direct reports are in which arm, to reduce differential encouragement.",
+        "Analysts: Wherever feasible, analysis scripts use anonymized IDs and arm labels masked until analysis plans are preregistered."
+      ]
+    },
+    "environmental_controls": [
+      "Same learning content, pathways, and assessments for both arms.",
+      "Same eligibility criteria and enrollment windows.",
+      "No concurrent major changes to compensation, promotion rules, or mandatory training affecting the target roles during the experiment window.",
+      "Consistent communication about program goals to both arms (no marketing advantage to treatment)."
+    ],
+    "copilot_configuration_controls": [
+      "Fixed model version and prompt templates during the core experiment window (no mid-experiment tuning except for critical safety fixes).",
+      "Same retrieval corpus for all treatment participants, filtered by locale/role where required.",
+      "Rate-limits and usage quotas applied consistently across treatment users."
+    ],
+    "data_and_privacy_controls": [
+      "Data collection plan reviewed by Legal, Privacy, and Works Council (where applicable).",
+      "Logging limited to necessary interaction metadata and sanitized message content with PII redaction where possible.",
+      "Clear employee-facing notice describing what data is collected and how it is used."
+    ]
+  },
+  "metrics": [
+    {
+      "name": "weekly_active_learners",
+      "unit": "percentage_of_enrolled_employees_per_week",
+      "definition": "Share of enrolled employees who engage with any learning activity (course launch, assessment, copilot/chat interaction, or KB article view) at least once in a given week.",
+      "type": "engagement_primary"
+    },
+    {
+      "name": "pathway_completion_rate",
+      "unit": "percentage_of_enrolled_employees_over_experiment_window",
+      "definition": "Percentage of employees who complete all required modules and assessments in the defined learning pathway within the experiment period.",
+      "type": "engagement_primary"
+    },
+    {
+      "name": "time_to_pathway_completion",
+      "unit": "days",
+      "definition": "Number of days from enrollment to completion of the learning pathway for those who complete within the experiment window.",
+      "type": "efficiency_secondary"
+    },
+    {
+      "name": "session_level_learning_time",
+      "unit": "median_minutes_per_active_week",
+      "definition": "Median total time spent in learning activities per active learner per week, separately measured for content interaction and copilot interaction.",
+      "type": "behavior_secondary"
+    },
+    {
+      "name": "copilot_usage_rate",
+      "unit": "percentage_of_treatment_employees",
+      "definition": "Within the treatment group, share of employees who initiate at least one copilot session during the experiment.",
+      "type": "implementation_check"
+    },
+    {
+      "name": "copilot_messages_per_user",
+      "unit": "count_per_treatment_employee",
+      "definition": "Distribution (mean, median, deciles) of total copilot messages exchanged per treatment user during the experiment.",
+      "type": "dose_response"
+    },
+    {
+      "name": "learning_experience_nps",
+      "unit": "nps_score_-100_to_100",
+      "definition": "Net Promoter Score from a standardized survey question (e.g., 'How likely are you to recommend this learning experience to a colleague?') administered to both arms at weeks 4 and 8/12.",
+      "type": "satisfaction_primary"
+    },
+    {
+      "name": "guidance_helpfulness_csatscore",
+      "unit": "mean_likert_1_to_5",
+      "definition": "Average rating on specific guidance/helpfulness questions (e.g., 'The guidance I received helped me know what to do next') from post-session or periodic surveys.",
+      "type": "satisfaction_secondary"
+    },
+    {
+      "name": "skills_assessment_improvement",
+      "unit": "delta_score_points",
+      "definition": "Change from pre- to post-experiment in objective skill assessments (e.g., quiz scores, scenario-based tasks) aggregated at the employee level.",
+      "type": "skills_primary"
+    },
+    {
+      "name": "skills_proficiency_target_achieved",
+      "unit": "percentage_of_employees",
+      "definition": "Share of employees who reach or exceed a predefined proficiency threshold on the primary skills assessment by the end of the experiment.",
+      "type": "skills_secondary"
+    },
+    {
+      "name": "manager_observed_skill_uplift",
+      "unit": "mean_likert_1_to_5",
+      "definition": "Average change in manager-rated skill level or observed performance behaviors (using a brief, standardized rubric) from pre- to post-experiment.",
+      "type": "skills_secondary"
+    },
+    {
+      "name": "safety_violation_rate",
+      "unit": "incidents_per_1000_users",
+      "definition": "Number of confirmed content-safety or compliance incidents (e.g., policy-inconsistent advice, inappropriate responses) attributable to the learning support channel, normalized per 1,000 active users, segmented by arm.",
+      "type": "safety_guardrail"
+    },
+    {
+      "name": "human_coach_escalation_rate",
+      "unit": "percentage_of_users",
+      "definition": "Percentage of users who escalate to a human coach, HR, or L&D support at least once during the experiment, segmented by arm.",
+      "type": "behavior_secondary"
+    },
+    {
+      "name": "support_ticket_volume_learning_related",
+      "unit": "tickets_per_1000_users",
+      "definition": "Volume of helpdesk tickets tagged as learning/support inquiries per 1,000 users in each arm.",
+      "type": "operational_secondary"
+    },
+    {
+      "name": "retention_in_program",
+      "unit": "percentage_of_enrolled_employees",
+      "definition": "Percentage of employees still actively engaged (at least one learning activity in prior 2 weeks) at pre-specified checkpoints (e.g., weeks 4 and 8/12).",
+      "type": "engagement_secondary"
+    },
+    {
+      "name": "llm_token_or_inference_cost",
+      "unit": "currency_per_user_or_per_message",
+      "definition": "Direct variable cost of LLM inference and retrieval per treatment user and per 1,000 messages, for economic evaluation.",
+      "type": "cost_secondary"
+    }
+  ],
+  "success_criteria": {
+    "primary": [
+      {
+        "metric": "pathway_completion_rate",
+        "target": "Treatment completion rate is at least 10 percentage points higher than baseline (e.g., 65% vs. 55%) and the difference is statistically significant at alpha = 0.05 (two-sided)."
+      },
+      {
+        "metric": "learning_experience_nps",
+        "target": "Treatment NPS is at least +15 points higher than baseline at the primary endpoint survey, with non-overlapping 95% confidence intervals."
+      },
+      {
+        "metric": "skills_assessment_improvement",
+        "target": "Treatment group shows at least 0.25 standard deviations greater mean improvement than baseline (Cohen\u2019s d \u2265 0.25), controlling for baseline scores, with p < 0.05."
+      },
+      {
+        "metric": "safety_violation_rate",
+        "target": "No statistically significant increase in safety_violation_rate in treatment vs. baseline, and absolute rate remains below a predefined threshold agreed with Risk/Compliance (e.g., <1 incident per 1,000 users)."
+      }
+    ],
+    "secondary": [
+      {
+        "metric": "weekly_active_learners",
+        "target": "Treatment arm weekly_active_learners is \u2265 5 percentage points higher than baseline across the majority of weeks."
+      },
+      {
+        "metric": "skills_proficiency_target_achieved",
+        "target": "Treatment arm has \u2265 20% relative improvement in the share of learners hitting the proficiency threshold vs. baseline."
+      },
+      {
+        "metric": "support_ticket_volume_learning_related",
+        "target": "Equal or lower ticket volume in treatment vs. baseline, indicating the copilot is not generating confusion requiring human intervention."
+      },
+      {
+        "metric": "llm_token_or_inference_cost",
+        "target": "Indicative cost per incremental pathway completion or per unit of skill gain is within leadership\u2019s acceptable ROI threshold when modeled against productivity or risk-reduction assumptions."
+      }
+    ],
+    "decision_rules": [
+      "If primary success criteria on completion, NPS, and skills improvement are met without higher safety_violation_rate, recommend scaling the copilot to additional cohorts, with continued monitoring.",
+      "If engagement and satisfaction improvements are met but skills outcomes are neutral, recommend targeted iteration on learning design and copilot prompts before scaling.",
+      "If safety_violation_rate increases beyond threshold, pause treatment for root-cause analysis and model/guardrail adjustment before any wider deployment."
+    ]
+  },
+  "failure_modes": [
+    {
+      "name": "low_adoption_of_copilot",
+      "description": "A large share of treatment users never or rarely engage with the copilot, making it difficult to detect true impact.",
+      "indicators": [
+        "copilot_usage_rate < 50%",
+        "copilot_messages_per_user median near zero"
+      ],
+      "mitigations": [
+        "Incorporate copilot prompts in on-boarding and early modules.",
+        "Send neutral, non-coercive nudges explaining how the copilot can help.",
+        "Conduct qualitative interviews with a sample of non-users to identify adoption barriers."
+      ]
+    },
+    {
+      "name": "contamination_between_arms",
+      "description": "Baseline arm employees gain access to the copilot indirectly (e.g., via shared devices or links), blurring arm differences.",
+      "indicators": [
+        "Copilot logs show usage from accounts flagged as baseline.",
+        "Managers encourage baseline employees to use treatment-only tools."
+      ],
+      "mitigations": [
+        "Enforce access controls at SSO/feature-flag level.",
+        "Educate managers that some participants are in a comparison group and should use only standard tools.",
+        "Monitor access logs; if contamination exceeds predefined threshold (e.g., 5% of baseline users), treat as protocol deviation in analysis."
+      ]
+    },
+    {
+      "name": "model_drift_or_configuration_changes",
+      "description": "Underlying LLM or retrieval configuration changes mid-experiment, altering treatment quality.",
+      "indicators": [
+        "Version changes in LLM backend.",
+        "Sudden shifts in response length, latency, or satisfaction.",
+        "Infrastructure releases affecting RAG indexing."
+      ],
+      "mitigations": [
+        "Freeze model and prompt versions during core measurement window, barring critical security/safety fixes.",
+        "Log model version and configuration hash with every interaction.",
+        "Segment analysis pre/post any unavoidable change; if impact is material, consider restarting or extending the experiment."
+      ]
+    },
+    {
+      "name": "biased_or_inaccurate_guidance",
+      "description": "Copilot provides advice that is inaccurate, inconsistent with policies, or biased regarding roles or career moves.",
+      "indicators": [
+        "Increased safety_violation_rate compared to baseline support channels.",
+        "Qualitative flags from human coaches, employees, or compliance reviews.",
+        "Disparate outcomes in skills or satisfaction by demographic segments (where lawful and appropriately governed)."
+      ],
+      "mitigations": [
+        "Pre-launch red-teaming and prompt/content adjustments.",
+        "Ongoing sample-review of conversations by a designated review team, with structured annotation for issues.",
+        "Stricter grounding in official content (increased emphasis on citations, reduced creative generation in sensitive topics)."
+      ]
+    },
+    {
+      "name": "measurement_bias_and_nonresponse",
+      "description": "Differences in who responds to surveys or completes assessments between arms skew results.",
+      "indicators": [
+        "Significant differences in survey response or assessment completion rates between arms.",
+        "Demographic or role imbalances among respondents vs. full sample."
+      ],
+      "mitigations": [
+        "Standardized, arm-neutral invitations and reminders for surveys and assessments.",
+        "Use weighting or imputation techniques in analysis where appropriate.",
+        "Triangulate results with behavioral metrics (e.g., completion, usage) that do not depend on voluntary survey response."
+      ]
+    },
+    {
+      "name": "external_shocks_or_program_changes",
+      "description": "Parallel initiatives (e.g., reorg, new mandatory training) or external events alter engagement independently of the copilot.",
+      "indicators": [
+        "Sudden changes in both arms coinciding with known events.",
+        "Managers report conflicting initiatives affecting learning time."
+      ],
+      "mitigations": [
+        "Coordinate with HR/IT to avoid overlapping major initiatives for the pilot cohort.",
+        "Log timeline of major organizational events and control for them in analysis where feasible.",
+        "If disruption is material and asymmetric between arms, consider repeating the experiment with a cleaner window."
+      ]
+    }
+  ],
+  "required_environment": {
+    "organizational": [
+      "Exec sponsorship from CHRO/Chief Learning Officer and CIO/CTO to ensure access to systems and data.",
+      "Agreement with Legal, Privacy, InfoSec, and (where applicable) Works Councils on experiment scope, data collection, and guardrails.",
+      "Existing upskilling or reskilling pathway with clearly defined objectives, content, and assessments.",
+      "Communication plan aligned with corporate culture and labor relations norms."
+    ],
+    "technical": [
+      "Production or pre-production LXP/intranet capable of embedding a chat widget or launching a separate copilot UI with SSO.",
+      "Stable access to an LLM backend (hosted or self-hosted) approved for internal experimentation, with capacity planning for anticipated load.",
+      "A vector database and indexing pipeline for curated enterprise learning and guidance content.",
+      "Experimentation/feature-flagging platform that can randomize individual users into baseline vs. treatment and log arm assignments.",
+      "Data warehouse or analytics environment with event logging from both LXP and copilot services.",
+      "Monitoring and logging infrastructure for safety and performance metrics (e.g., latency, error rates, policy-violation flags)."
+    ],
+    "data": [
+      "Curated corpus of learning content, how-to guides, SOPs, and career framework documents suitable for employee-facing guidance.",
+      "User metadata (role, BU, location, enrolled programs) accessible via secure APIs or nightly batch loads.",
+      "Historical learning engagement data to inform power calculations and benchmark metrics.",
+      "Pre-defined assessment instruments (quizzes, scenario tasks) and manager rating rubrics for skills evaluation."
+    ],
+    "governance": [
+      "Documented data processing register for the experiment.",
+      "Defined escalation pathways and on-call responsibilities for safety or compliance incidents.",
+      "Ethics review or equivalent internal process for employee-experimentation where applicable.",
+      "Clear timeline and go/no-go criteria for scaling based on experiment outcomes."
+    ]
+  },
+  "run_instructions": [
+    {
+      "phase": "0_planning_and_design",
+      "steps": [
+        "Define the target cohort (e.g., 2\u20133 role families in one or two regions) and select 1\u20132 learning pathways that are strategically important and have clear assessments.",
+        "Conduct power calculations using historical completion and assessment data to refine target sample sizes and experiment duration (8\u201312 weeks recommended).",
+        "Secure approvals from Legal, Privacy, InfoSec, HR leadership, and Works Councils where required, including data protection impact assessments if necessary.",
+        "Define and tag the content corpus for copilot retrieval (learning materials, SOPs, FAQs, career framework) ensuring only vetted, up-to-date documents are included.",
+        "Finalize success criteria and preregister the analysis plan in an internal repository (outcomes, statistical tests, sub-group analyses)."
+      ]
+    },
+    {
+      "phase": "1_implementation_and_technical_setup",
+      "steps": [
+        "Implement or configure the copilot backend using open-source tools in the companion repository (e.g., a Python-based service with LLM, RAG, and safety filters).",
+        "Integrate the copilot UI into the LXP/intranet and ensure SSO-based authentication and arm-aware feature-flagging.",
+        "Develop baseline guidance UX improvements if needed (e.g., updated static pathway pages) so that the baseline arm is a credible alternative, not a straw man.",
+        "Set up event logging schemas in the data warehouse to ingest: user metadata, learning events (module launches, completions, assessments), copilot events (sessions, messages, errors), and safety events.",
+        "Deploy monitoring dashboards for infrastructure (latency, uptime), usage (active users, sessions), and safety (flagged conversations)."
+      ]
+    },
+    {
+      "phase": "2_content_validation_and_safety_testing",
+      "steps": [
+        "Conduct internal alpha testing with a small non-experimental group (e.g., L&D team) to identify hallucinations, policy inconsistencies, and UX issues.",
+        "Run structured red-teaming scripts (e.g., prompts that probe for policy-violating advice, sensitive topics, personal data questions) and log results.",
+        "Refine system prompts, retrieval filters, and safety policies based on red-team findings.",
+        "Re-run targeted tests until safety_violation_rate in test logs is within acceptable pre-set limits.",
+        "Freeze model version, prompts, and retrieval corpus for the core experiment (subject to emergency changes only)."
+      ]
+    },
+    {
+      "phase": "3_recruitment_and_randomization",
+      "steps": [
+        "Compile the eligible employee list, apply inclusion/exclusion criteria, and verify SSO IDs and system access.",
+        "Stratify by role, location, and manager, then randomize employees into baseline and treatment arms with the experimentation platform.",
+        "Record arm assignment in a secure table accessible to analytics pipelines and feature-flag logic.",
+        "Communicate the program to all participants with arm-neutral framing (e.g., 'We are piloting enhanced guidance tools during your learning journey; your feedback will help us improve').",
+        "Offer an opt-out channel where required by policy, and record any opt-outs for both arms."
+      ]
+    },
+    {
+      "phase": "4_experiment_execution",
+      "steps": [
+        "Launch the learning program simultaneously for both arms, confirming that content, schedules, and assessments are identical.",
+        "Enable the copilot only for treatment users via feature flags, verifying that baseline users cannot access it in UI or through direct URLs.",
+        "Monitor daily for technical issues (errors, latency) and safety incidents; document any critical changes implemented during the run.",
+        "Send standardized reminders and communications about learning milestones to both arms at the same cadence and tone.",
+        "Administer interim surveys (e.g., at week 4) and final surveys (e.g., at week 8 or 12) to both arms, using consistent wording and delivery channels."
+      ]
+    },
+    {
+      "phase": "5_data_collection_and_quality_checks",
+      "steps": [
+        "At pre-defined intervals (e.g., weekly), extract engagement and copilot usage metrics to monitor dose and guard against major anomalies.",
+        "At experiment end, extract complete datasets: user attributes, arm assignments, learning events, copilot logs (anonymized for analysis), assessments results, surveys, and manager ratings.",
+        "Perform data-quality checks: completeness of arm assignment, duplicates, timestamp sanity checks, and internal consistency (e.g., completion implies prior module starts).",
+        "Flag and document any protocol deviations (e.g., contamination, mid-run model changes, unauthorized content uploads) for later sensitivity analyses."
+      ]
+    },
+    {
+      "phase": "6_analysis_and_interpretation",
+      "steps": [
+        "Implement analysis scripts from the companion repository (e.g., in Python/R) to compute all primary and secondary metrics by arm.",
+        "Apply pre-specified statistical tests for primary outcomes (e.g., chi-squared or logistic regression for completion rates, t-tests or ANCOVA for continuous outcomes).",
+        "Conduct sensitivity analyses: per-protocol vs. intention-to-treat, high-usage vs. low-usage copilot users, and excluding major protocol deviations.",
+        "Segment results by key subgroups (role, location, baseline skill) to check for heterogeneous treatment effects and potential equity concerns, in line with governance approvals.",
+        "Summarize findings into an executive-friendly briefing, including impact estimates, confidence intervals, safety observations, and cost-per-impact metrics."
+      ]
+    },
+    {
+      "phase": "7_decision_and_scaling",
+      "steps": [
+        "Review results with the cross-functional steering group (HR, L&D, IT, Data, Risk, representative business leaders).",
+        "Apply the success_criteria decision rules to determine whether to scale, iterate, or sunset the copilot for this use case.",
+        "If scaling is approved, define a phased rollout plan (e.g., additional roles or regions) with continued monitoring, including simpler quasi-experiments where full RCTs are impractical.",
+        "Document lessons learned (technical, UX, governance) and update internal playbooks for future GenAI coaching and copilot initiatives.",
+        "Archive experiment artifacts (code, configuration, analysis, decisions) in the repository for reproducibility and audit."
+      ]
+    }
+  ],
+  "evidence_schema": {
+    "tables": [
+      {
+        "name": "users",
+        "primary_key": "user_id",
+        "fields": [
+          {
+            "name": "user_id",
+            "type": "string",
+            "description": "Pseudonymized unique identifier for each employee."
+          },
+          {
+            "name": "arm",
+            "type": "string",
+            "description": "Randomized assignment: 'baseline' or 'treatment'."
+          },
+          {
+            "name": "role_family",
+            "type": "string",
+            "description": "Job family/level code, e.g., 'CS_L2'."
+          },
+          {
+            "name": "business_unit",
+            "type": "string",
+            "description": "Business unit or function code."
+          },
+          {
+            "name": "location_region",
+            "type": "string",
+            "description": "Geographic region; may be generalized for privacy."
+          },
+          {
+            "name": "manager_id_hashed",
+            "type": "string",
+            "description": "Hashed manager identifier, for clustering and stratification."
+          },
+          {
+            "name": "pathway_id",
+            "type": "string",
+            "description": "Identifier of the learning pathway enrolled in."
+          },
+          {
+            "name": "enrollment_date",
+            "type": "timestamp",
+            "description": "Date/time when user enrolled in the pathway and entered experiment."
+          },
+          {
+            "name": "opt_out_flag",
+            "type": "boolean",
+            "description": "Whether the user opted out of the experiment or its measurement."
+          }
+        ]
+      },
+      {
+        "name": "learning_events",
+        "primary_key": "event_id",
+        "fields": [
+          {
+            "name": "event_id",
+            "type": "string",
+            "description": "Unique ID for each event."
+          },
+          {
+            "name": "user_id",
+            "type": "string",
+            "description": "Foreign key to users.user_id."
+          },
+          {
+            "name": "timestamp",
+            "type": "timestamp",
+            "description": "Time the event occurred (UTC)."
+          },
+          {
+            "name": "event_type",
+            "type": "string",
+            "description": "E.g., 'module_start', 'module_complete', 'assessment_start', 'assessment_complete', 'kb_view'."
+          },
+          {
+            "name": "module_id",
+            "type": "string",
+            "description": "ID of module, if applicable."
+          },
+          {
+            "name": "duration_seconds",
+            "type": "integer",
+            "description": "Duration of the event/session in seconds, if applicable."
+          },
+          {
+            "name": "metadata_json",
+            "type": "json",
+            "description": "Additional structured attributes as needed (e.g., device type)."
+          }
+        ]
+      },
+      {
+        "name": "assessments",
+        "primary_key": "assessment_record_id",
+        "fields": [
+          {
+            "name": "assessment_record_id",
+            "type": "string",
+            "description": "Unique record for each assessment attempt."
+          },
+          {
+            "name": "user_id",
+            "type": "string",
+            "description": "Foreign key to users.user_id."
+          },
+          {
+            "name": "assessment_id",
+            "type": "string",
+            "description": "Identifier for the assessment instrument."
+          },
+          {
+            "name": "attempt_datetime",
+            "type": "timestamp",
+            "description": "Date/time of attempt."
+          },
+          {
+            "name": "score_raw",
+            "type": "float",
+            "description": "Raw score for the attempt."
+          },
+          {
+            "name": "score_normalized",
+            "type": "float",
+            "description": "Score normalized to 0\u2013100 scale."
+          },
+          {
+            "name": "is_pretest",
+            "type": "boolean",
+            "description": "True for pre-experiment baseline assessments."
+          },
+          {
+            "name": "is_posttest",
+            "type": "boolean",
+            "description": "True for post-experiment assessments."
+          }
+        ]
+      },
+      {
+        "name": "copilot_sessions",
+        "primary_key": "session_id",
+        "fields": [
+          {
+            "name": "session_id",
+            "type": "string",
+            "description": "Unique ID for each copilot session (continuous user interaction window)."
+          },
+          {
+            "name": "user_id",
+            "type": "string",
+            "description": "Foreign key to users.user_id (treatment arm only)."
+          },
+          {
+            "name": "start_time",
+            "type": "timestamp",
+            "description": "Session start time (UTC)."
+          },
+          {
+            "name": "end_time",
+            "type": "timestamp",
+            "description": "Session end time (UTC)."
+          },
+          {
+            "name": "num_messages_user",
+            "type": "integer",
+            "description": "Count of user messages in the session."
+          },
+          {
+            "name": "num_messages_copilot",
+            "type": "integer",
+            "description": "Count of copilot responses."
+          },
+          {
+            "name": "entry_point",
+            "type": "string",
+            "description": "Where session originated, e.g., 'LXP_module_page', 'KB_page', 'Teams'."
+          },
+          {
+            "name": "model_version",
+            "type": "string",
+            "description": "Identifier for the LLM model configuration used."
+          },
+          {
+            "name": "safety_flags",
+            "type": "string",
+            "description": "Comma-separated or JSON-encoded list of safety rule triggers during the session, if any."
+          }
+        ]
+      },
+      {
+        "name": "copilot_messages",
+        "primary_key": "message_id",
+        "fields": [
+          {
+            "name": "message_id",
+            "type": "string",
+            "description": "Unique ID for each message."
+          },
+          {
+            "name": "session_id",
+            "type": "string",
+            "description": "Foreign key to copilot_sessions.session_id."
+          },
+          {
+            "name": "sender_type",
+            "type": "string",
+            "description": "'user' or 'copilot'."
+          },
+          {
+            "name": "timestamp",
+            "type": "timestamp",
+            "description": "Time the message was sent (UTC)."
+          },
+          {
+            "name": "tokens_input",
+            "type": "integer",
+            "description": "Estimated number of input tokens for the LLM (copilot messages only)."
+          },
+          {
+            "name": "tokens_output",
+            "type": "integer",
+            "description": "Estimated number of output tokens for the LLM (copilot messages only)."
+          },
+          {
+            "name": "retrieval_docs_count",
+            "type": "integer",
+            "description": "Number of documents retrieved (copilot messages only)."
+          },
+          {
+            "name": "safety_flag",
+            "type": "boolean",
+            "description": "Whether the message triggered any safety mechanism."
+          },
+          {
+            "name": "content_redacted",
+            "type": "string",
+            "description": "Optional, redacted text snippet or hashed representation for qualitative review subject to policy."
+          }
+        ]
+      },
+      {
+        "name": "surveys",
+        "primary_key": "survey_response_id",
+        "fields": [
+          {
+            "name": "survey_response_id",
+            "type": "string",
+            "description": "Unique ID for each survey response."
+          },
+          {
+            "name": "user_id",
+            "type": "string",
+            "description": "Foreign key to users.user_id."
+          },
+          {
+            "name": "survey_type",
+            "type": "string",
+            "description": "E.g., 'midpoint', 'endpoint', 'post-session'."
+          },
+          {
+            "name": "response_datetime",
+            "type": "timestamp",
+            "description": "Date/time when survey was completed."
+          },
+          {
+            "name": "nps_score",
+            "type": "integer",
+            "description": "0\u201310 rating used to calculate NPS (null if not asked)."
+          },
+          {
+            "name": "guidance_helpfulness_score",
+            "type": "integer",
+            "description": "Likert 1\u20135 score for guidance helpfulness."
+          },
+          {
+            "name": "overall_satisfaction_score",
+            "type": "integer",
+            "description": "Likert 1\u20135 score for overall experience satisfaction."
+          },
+          {
+            "name": "open_text_feedback",
+            "type": "string",
+            "description": "Optional free-text comments (subject to privacy rules and redaction)."
+          }
+        ]
+      },
+      {
+        "name": "manager_ratings",
+        "primary_key": "manager_rating_id",
+        "fields": [
+          {
+            "name": "manager_rating_id",
+            "type": "string",
+            "description": "Unique identifier for each manager rating instance."
+          },
+          {
+            "name": "user_id",
+            "type": "string",
+            "description": "Employee being rated."
+          },
+          {
+            "name": "manager_id_hashed",
+            "type": "string",
+            "description": "Hashed ID of the manager."
+          },
+          {
+            "name": "rating_datetime",
+            "type": "timestamp",
+            "description": "Date/time rating was captured."
+          },
+          {
+            "name": "skill_dimension",
+            "type": "string",
+            "description": "Skill or competency being rated (e.g., 'data_literacy', 'customer_handling')."
+          },
+          {
+            "name": "rating_score",
+            "type": "integer",
+            "description": "Likert 1\u20135 or 1\u20137 rating."
+          },
+          {
+            "name": "is_pre",
+            "type": "boolean",
+            "description": "True if collected before experiment start."
+          },
+          {
+            "name": "is_post",
+            "type": "boolean",
+            "description": "True if collected after experiment end."
+          }
+        ]
+      },
+      {
+        "name": "safety_incidents",
+        "primary_key": "incident_id",
+        "fields": [
+          {
+            "name": "incident_id",
+            "type": "string",
+            "description": "Unique identifier for each confirmed safety or compliance incident."
+          },
+          {
+            "name": "user_id",
+            "type": "string",
+            "description": "User associated with incident, if identifiable and allowed by policy."
+          },
+          {
+            "name": "source_channel",
+            "type": "string",
+            "description": "'copilot', 'kb', 'human_support', or other support channel."
+          },
+          {
+            "name": "detection_datetime",
+            "type": "timestamp",
+            "description": "Time incident was detected."
+          },
+          {
+            "name": "severity_level",
+            "type": "string",
+            "description": "Categorization of severity (e.g., 'low', 'medium', 'high')."
+          },
+          {
+            "name": "category",
+            "type": "string",
+            "description": "Incident type, e.g., 'policy_misinterpretation', 'biased_guidance', 'inappropriate_language'."
+          },
+          {
+            "name": "resolved_flag",
+            "type": "boolean",
+            "description": "Whether the incident has been remediated/closed."
+          }
+        ]
+      },
+      {
+        "name": "support_tickets",
+        "primary_key": "ticket_id",
+        "fields": [
+          {
+            "name": "ticket_id",
+            "type": "string",
+            "description": "Helpdesk or support ticket ID."
+          },
+          {
+            "name": "user_id",
+            "type": "string",
+            "description": "Foreign key to users.user_id, where known."
+          },
+          {
+            "name": "created_datetime",
+            "type": "timestamp",
+            "description": "Ticket creation time."
+          },
+          {
+            "name": "resolved_datetime",
+            "type": "timestamp",
+            "description": "Ticket resolution time, if resolved."
+          },
+          {
+            "name": "category",
+            "type": "string",
+            "description": "Ticket category, e.g., 'learning_support', 'technical_issue', 'copilot_feedback'."
+          },
+          {
+            "name": "sub_category",
+            "type": "string",
+            "description": "More granular classification if available."
+          },
+          {
+            "name": "arm_inferred",
+            "type": "string",
+            "description": "Derived from users table for reporting, not user-facing."
+          }
+        ]
+      }
+    ],
+    "derived_views": [
+      {
+        "name": "user_level_outcomes",
+        "description": "Aggregated per-user metrics for analysis (e.g., completion, engagement, skill improvements).",
+        "fields": [
+          {
+            "name": "user_id",
+            "type": "string",
+            "description": "Employee ID (pseudonymized)."
+          },
+          {
+            "name": "arm",
+            "type": "string",
+            "description": "Baseline or treatment assignment."
+          },
+          {
+            "name": "completed_pathway_flag",
+            "type": "boolean",
+            "description": "True if user completed pathway within experiment window."
+          },
+          {
+            "name": "time_to_completion_days",
+            "type": "float",
+            "description": "Days from enrollment to completion, null if not completed."
+          },
+          {
+            "name": "weekly_active_weeks",
+            "type": "integer",
+            "description": "Number of weeks in which user was active in learning."
+          },
+          {
+            "name": "total_learning_minutes",
+            "type": "float",
+            "description": "Total minutes spent across learning_events."
+          },
+          {
+            "name": "total_copilot_messages",
+            "type": "integer",
+            "description": "Total messages exchanged with copilot (0 for baseline users)."
+          },
+          {
+            "name": "pre_assessment_score",
+            "type": "float",
+            "description": "Most recent pre-test score_normalized."
+          },
+          {
+            "name": "post_assessment_score",
+            "type": "float",
+            "description": "Most recent post-test score_normalized."
+          },
+          {
+            "name": "assessment_improvement",
+            "type": "float",
+            "description": "post_assessment_score - pre_assessment_score."
+          },
+          {
+            "name": "proficiency_target_achieved_flag",
+            "type": "boolean",
+            "description": "True if post_assessment_score >= target threshold."
+          },
+          {
+            "name": "nps_latest",
+            "type": "integer",
+            "description": "Most recent NPS rating, if any."
+          },
+          {
+            "name": "guidance_helpfulness_latest",
+            "type": "integer",
+            "description": "Most recent guidance helpfulness score, if any."
+          },
+          {
+            "name": "manager_rating_pre",
+            "type": "float",
+            "description": "Average pre-experiment manager rating for target skills."
+          },
+          {
+            "name": "manager_rating_post",
+            "type": "float",
+            "description": "Average post-experiment manager rating for target skills."
+          },
+          {
+            "name": "manager_rating_delta",
+            "type": "float",
+            "description": "manager_rating_post - manager_rating_pre."
+          },
+          {
+            "name": "any_safety_incident_flag",
+            "type": "boolean",
+            "description": "True if user is associated with at least one safety_incidents record during experiment."
+          }
+        ]
+      }
+    ]
+  }
+}

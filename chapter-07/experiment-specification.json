@@ -1,0 +1,586 @@
+{
+  "experiment_id": "exp-07-skills-rec-matching-v1",
+  "hypothesis": "An AI-powered skills-based recommendation engine that uses a structured skills graph and contextual behavioral signals will increase relevant engagement with learning, projects, and internal roles by at least 20% compared to a simple rule-based (non-AI) recommender, without increasing measured bias across key employee segments.",
+  "baseline": {
+    "description": "Rule-based recommendation engine that matches employees to learning items, projects, and roles using explicit skills tags and simple filters only.",
+    "logic": {
+      "inputs": [
+        "employee_profile.skills (explicit self-declared skills and proficiency levels)",
+        "employee_profile.role_family",
+        "employee_profile.location",
+        "catalog_item.skills_required (for learning content, projects, and roles)",
+        "catalog_item.role_family",
+        "catalog_item.status (active/archived)",
+        "basic business rules (e.g., compliance-required training overrides)"
+      ],
+      "matching_strategy": [
+        "Filter catalog to items where catalog_item.role_family == employee_profile.role_family OR catalog_item.skills_required overlaps employee_profile.skills.",
+        "Score each item by count of overlapping skills between employee_profile.skills and catalog_item.skills_required.",
+        "Optionally boost items marked as 'mandatory' or 'strategic priority'.",
+        "Rank items by score descending and recency; show top N items by type (learning, projects, roles)."
+      ],
+      "pseudocode": "def score_baseline(employee, item):\n    overlap = len(set(employee.skills) & set(item.skills_required))\n    base_score = overlap\n    if item.is_mandatory:\n        base_score += 5\n    if item.is_strategic:\n        base_score += 2\n    return base_score\n\nrecommendations = sorted(catalog_items, key=lambda i: score_baseline(emp, i), reverse=True)[:N]"
+    },
+    "serving_pattern": {
+      "experiment_unit": "employee_id",
+      "exposure": "When an employee visits the 'Recommended for You' section in the learning or internal-mobility portal, baseline logic is used if the user is assigned to the control group.",
+      "randomization": "Simple Bernoulli randomization at employee_id level (e.g., 50% control, 50% treatment), stratified by business unit and geography if desired."
+    }
+  },
+  "treatment": {
+    "description": "AI-powered hybrid recommendation engine using skills-graph embeddings and behavioral context to recommend learning, projects, and roles.",
+    "logic": {
+      "inputs": [
+        "skills_graph (nodes: skills, employees, roles, learning items, projects; edges: HAS_SKILL, REQUIRES_SKILL, LEARNED_FROM, WORKED_ON, SIMILAR_TO)",
+        "employee_profile.skills (explicit) + inferred skills from history and graph neighbors",
+        "employee_behavioral_signals (clicks, enrollments, completions, dwell time, explicit ratings)",
+        "catalog_item.metadata (skills_required, seniority_level, business_unit, strategic_priority_flag)",
+        "context_signals (current role, target role interests if provided, geography, language)",
+        "global popularity and quality signals (completion rates, NPS-like ratings) with debiasing by segment"
+      ],
+      "modeling_strategy": {
+        "steps": [
+          "Represent each skill, employee, and catalog item as an embedding vector using graph-based or matrix factorization techniques (e.g., Node2Vec on skills graph, or collaborative filtering on interaction matrix).",
+          "Construct an employee embedding as a function of their skills, past interactions, and graph neighborhood.",
+          "Construct catalog item embeddings from required skills, historical consumers, and graph neighborhood.",
+          "Compute relevance score as similarity(employee_embedding, item_embedding) plus business-rule modifiers (mandatory, strategic, compliance).",
+          "Incorporate basic diversity / fairness constraints (e.g., ensure mix of stretch vs. foundational items, cap over-exposure of any one category)."
+        ],
+        "pseudocode": "import numpy as np\n\n# Assume precomputed embeddings\nemp_vec = employee_embeddings[employee_id]\n\ndef score_treatment(emp_vec, item_id):\n    item_vec = item_embeddings[item_id]\n    sim = np.dot(emp_vec, item_vec) / (np.linalg.norm(emp_vec) * np.linalg.norm(item_vec) + 1e-8)\n    score = sim\n    item = catalog[item_id]\n    if item.is_mandatory:\n        score += 0.3\n    if item.is_strategic:\n        score += 0.1\n    # simple diversity penalty for over-recommended categories\n    category_penalty = category_frequency_penalty(item.category)\n    score -= category_penalty\n    return score\n\nscores = {item_id: score_treatment(emp_vec, item_id) for item_id in candidate_items}\nrecommendations = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:N]"
+      }
+    },
+    "serving_pattern": {
+      "experiment_unit": "employee_id",
+      "exposure": "When an employee in the treatment group visits the 'Recommended for You' section, treatment logic using embeddings and graph features is used.",
+      "randomization": "Same randomization schema as baseline for comparability."
+    },
+    "human_controls": {
+      "management_overrides": [
+        "Global mandatory items always appear in top K recommendations regardless of algorithmic score.",
+        "Business units may pin specific initiatives with fixed positions (e.g., slot 1 or 2), leaving remaining slots for algorithmic ranking."
+      ],
+      "explainability_hooks": [
+        "Expose top 3 rationale features per recommendation (e.g., 'Because you have Skill X', 'Similar employees in Role Y took this course', 'Supports target role: Data Analyst').",
+        "Log explanation factors to enable offline audit (no impact on model)."
+      ]
+    }
+  },
+  "workloads": [
+    {
+      "name": "learning_recommendations",
+      "description": "Employees interact with recommended online courses, modules, and learning pathways.",
+      "input_data": {
+        "employees_sample_size": ">= 5,000 employees across at least 3 business units",
+        "catalog_size": ">= 2,000 learning items with skills tags",
+        "interaction_window_days": 30
+      }
+    },
+    {
+      "name": "project_matching",
+      "description": "Employees are recommended internal stretch projects or gigs.",
+      "input_data": {
+        "employees_sample_size": ">= 2,000 employees eligible for internal projects",
+        "catalog_size": ">= 200 projects with skills_required metadata",
+        "interaction_window_days": 60
+      }
+    },
+    {
+      "name": "role_and_internal_mobility",
+      "description": "Employees see recommended internal roles aligned to their skills and aspirations.",
+      "input_data": {
+        "employees_sample_size": ">= 3,000 employees who have viewed career pages in last 6 months",
+        "catalog_size": "All open internal roles with mapped skills",
+        "interaction_window_days": 90
+      }
+    }
+  ],
+  "controls": {
+    "randomization_and_assignment": {
+      "unit": "employee_id",
+      "allocation_ratio": "50% baseline (control), 50% treatment",
+      "stratification": [
+        "business_unit",
+        "region",
+        "seniority_band",
+        "gender (if legally permissible and appropriately governed)",
+        "job_family"
+      ],
+      "procedure": "Stratified random assignment such that each stratum has approximately equal representation in baseline and treatment. Assignment is persistent over the experiment window."
+    },
+    "hold_constant": [
+      "UI layout and positions of recommendation widgets (except for pinned mandatory items, which must be identical across groups).",
+      "Catalog content (no major additions or removals mid-experiment; if unavoidable, log timestamps).",
+      "Communication campaigns and nudges (e.g., same email reminders for both groups, not mentioning algorithm differences).",
+      "Eligibility rules for projects and roles.",
+      "Tracking and logging instrumentation."
+    ],
+    "exclusions": [
+      "New hires with tenure < 30 days (insufficient behavioral history).",
+      "Employees on extended leave or with restricted system access.",
+      "Employees in jurisdictions where experimentation of this type is constrained by regulation or union agreements without prior approval."
+    ],
+    "experiment_duration": {
+      "minimum_days": 30,
+      "maximum_days": 90,
+      "stopping_rules": [
+        "Stop early only if there is a statistically significant and practically large degradation in key KPIs (e.g., >20% drop in mandatory learning completion) in either arm.",
+        "Otherwise, run until reaching pre-specified sample size and minimum duration."
+      ]
+    }
+  },
+  "metrics": [
+    {
+      "name": "learning_click_through_rate",
+      "definition": "Proportion of recommendation impressions that result in at least one click on a learning item.",
+      "unit": "percentage of impressions",
+      "calculation": "CTR = (number_of_clicked_learning_recommendations) / (number_of_learning_recommendation_impressions) * 100"
+    },
+    {
+      "name": "learning_completion_rate",
+      "definition": "Proportion of started learning items from recommendations that are completed within 30 days.",
+      "unit": "percentage of started items",
+      "calculation": "Completion Rate = (completed_recommended_learning_items_within_30_days) / (started_recommended_learning_items) * 100"
+    },
+    {
+      "name": "project_application_rate",
+      "definition": "Proportion of project recommendation impressions that lead to an application or expression of interest.",
+      "unit": "percentage of impressions",
+      "calculation": "Application Rate = (project_applications_from_recommendations) / (project_recommendation_impressions) * 100"
+    },
+    {
+      "name": "internal_role_click_rate",
+      "definition": "Proportion of role recommendation impressions that result in a click-through to role details.",
+      "unit": "percentage of impressions",
+      "calculation": "Role CTR = (role_detail_page_visits_from_recs) / (role_recommendation_impressions) * 100"
+    },
+    {
+      "name": "employee_relevance_rating",
+      "definition": "Average employee rating of perceived relevance of recommendations on a 1\u20135 Likert scale, collected via in-product survey.",
+      "unit": "rating (1\u20135)",
+      "calculation": "Mean relevance score across all survey responses in each arm."
+    },
+    {
+      "name": "segment_fairness_gap_learning_ctr",
+      "definition": "Maximum absolute difference in learning recommendation CTR between key demographic or organizational segments (e.g., gender, region) within each arm.",
+      "unit": "percentage points",
+      "calculation": "Fairness Gap = max_over_segments |CTR_segment - CTR_overall|"
+    },
+    {
+      "name": "segment_fairness_gap_project_access",
+      "definition": "Difference in probability of receiving at least one project recommendation per week across key segments.",
+      "unit": "percentage points",
+      "calculation": "Gap = max_over_segments |P(project_rec >= 1 per week | segment) - P(project_rec >= 1 per week overall)|"
+    },
+    {
+      "name": "explanation_coverage_rate",
+      "definition": "Proportion of displayed recommendations that are accompanied by a machine-generated explanation visible to the user.",
+      "unit": "percentage of recommendations",
+      "calculation": "Coverage = (recommendations_with_explanations_shown) / (total_recommendations_shown) * 100"
+    },
+    {
+      "name": "explanation_trust_rating",
+      "definition": "Average employee rating of whether explanations help them trust or understand the recommendation (1\u20135 scale).",
+      "unit": "rating (1\u20135)",
+      "calculation": "Mean trust score from explanation-specific survey prompts."
+    },
+    {
+      "name": "override_rate",
+      "definition": "Fraction of recommendations that managers or admins manually override or hide.",
+      "unit": "percentage of recommendations",
+      "calculation": "Override Rate = (number_of_overridden_recommendations) / (total_recommendations_shown) * 100"
+    },
+    {
+      "name": "time_to_first_engagement",
+      "definition": "Median time from first exposure to recommendation area until first meaningful engagement (click/enrollment/application).",
+      "unit": "hours",
+      "calculation": "Compute median (and distribution) across employees in each arm."
+    }
+  ],
+  "success_criteria": {
+    "primary": [
+      "learning_click_through_rate_treatment >= learning_click_through_rate_baseline * 1.20 with p-value <= 0.05.",
+      "learning_completion_rate_treatment >= learning_completion_rate_baseline * 1.10 with p-value <= 0.05."
+    ],
+    "secondary": [
+      "project_application_rate_treatment >= project_application_rate_baseline * 1.15 with p-value <= 0.10 (directional improvement acceptable).",
+      "employee_relevance_rating_treatment - employee_relevance_rating_baseline >= 0.3 on 1\u20135 scale with p-value <= 0.05.",
+      "time_to_first_engagement_treatment <= time_to_first_engagement_baseline * 0.90 with p-value <= 0.10."
+    ],
+    "fairness_and_risk_constraints": [
+      "segment_fairness_gap_learning_ctr_treatment - segment_fairness_gap_learning_ctr_baseline <= 2.0 percentage points (no material worsening).",
+      "segment_fairness_gap_project_access_treatment - segment_fairness_gap_project_access_baseline <= 2.0 percentage points.",
+      "override_rate_treatment <= override_rate_baseline + 5 percentage points.",
+      "No statistically significant negative shift (p <= 0.05) in explanation_trust_rating in the treatment group compared to baseline."
+    ],
+    "executive_decision_rules": [
+      "If primary criteria are met and fairness constraints are respected, recommend scaling treatment model to a broader pilot or enterprise rollout.",
+      "If performance improves but fairness constraints are violated, require model retraining or post-processing adjustments and rerun the experiment.",
+      "If performance does not improve meaningfully (<10% uplift in primary metrics), maintain baseline and iterate on model features before re-testing.",
+      "If risk metrics (override_rate, employee_relevance_rating, explanation_trust_rating) degrade notably, halt rollout and conduct qualitative diagnostics."
+    ]
+  },
+  "failure_modes": [
+    {
+      "name": "cold_start_employees",
+      "description": "Employees with limited historical data receive poor or generic recommendations.",
+      "mitigations": [
+        "Fallback to baseline rule-based recommendations when interaction history is below a minimum threshold.",
+        "Leverage explicit skills profiles and role-family priors more heavily for these users.",
+        "Implement a short onboarding questionnaire to gather immediate preference and goal signals."
+      ]
+    },
+    {
+      "name": "cold_start_items",
+      "description": "New learning items or projects with no interaction history are under-recommended.",
+      "mitigations": [
+        "Use content-based embeddings from skills_required and descriptions to seed item embeddings.",
+        "Apply temporary exploration boost for new items until a minimum number of impressions/clicks are recorded.",
+        "Monitor exposure parity for new strategic items via dashboards."
+      ]
+    },
+    {
+      "name": "feedback_loop_bias",
+      "description": "Popular items become more popular, and niche or segment-relevant items are rarely surfaced, reinforcing existing patterns and potential biases.",
+      "mitigations": [
+        "Introduce controlled exploration (e.g., epsilon-greedy) to show lower-ranked items occasionally.",
+        "Regularly re-normalize popularity features by segment to prevent overfitting to majority segments.",
+        "Audit exposure and engagement metrics by segment on a recurring schedule."
+      ]
+    },
+    {
+      "name": "segment_disparities",
+      "description": "Certain demographic or organizational segments systematically receive lower-quality or fewer recommendations.",
+      "mitigations": [
+        "Compute fairness metrics (CTR and access gaps) and include them in experiment monitoring.",
+        "Apply post-processing re-ranking to enforce minimum exposure quotas for under-served segments where legally permissible.",
+        "Engage ethics and legal review if disparities persist; adjust feature sets or modeling approach."
+      ]
+    },
+    {
+      "name": "explanation_mismatch",
+      "description": "Displayed explanation does not accurately reflect the real drivers of the recommendation, reducing trust.",
+      "mitigations": [
+        "Align explanation generation with actual model features used in scoring (e.g., top contributing skills or interactions).",
+        "Run internal QA comparing logged feature attributions to displayed explanations.",
+        "Collect explicit feedback ('This explanation is helpful / not helpful') and iterate on templates."
+      ]
+    },
+    {
+      "name": "data_quality_issues",
+      "description": "Incorrect or outdated skills profiles or catalog tags lead to irrelevant matches.",
+      "mitigations": [
+        "Implement pre-experiment data checks for missing or inconsistent skills data.",
+        "Allow employees and managers to suggest corrections to skills profiles and tags with workflow approvals.",
+        "Track a 'data issue' feedback flag for any recommendation and route to content owners."
+      ]
+    },
+    {
+      "name": "organizational_pushback",
+      "description": "Managers or employees distrust algorithmic recommendations, leading to low adoption regardless of underlying quality.",
+      "mitigations": [
+        "Position the system as decision support rather than automation of decisions.",
+        "Provide clear communication about what the system does and does not do (e.g., not used for punitive performance evaluations).",
+        "Involve representative managers and employees in early pilot feedback sessions."
+      ]
+    }
+  ],
+  "required_environment": {
+    "data": {
+      "minimum_fields_employee": [
+        "employee_id (pseudonymized ID is acceptable)",
+        "business_unit",
+        "region",
+        "job_family",
+        "current_role",
+        "skills (list of skill_ids with optional proficiency levels)",
+        "tenure_months",
+        "optional_demographics (e.g., gender, age_band) subject to legal and ethical approvals"
+      ],
+      "minimum_fields_catalog_learning": [
+        "item_id",
+        "title",
+        "description",
+        "skills_required (list of skill_ids)",
+        "category",
+        "delivery_format",
+        "estimated_duration",
+        "is_mandatory",
+        "is_strategic",
+        "language"
+      ],
+      "minimum_fields_catalog_projects_roles": [
+        "project_or_role_id",
+        "title",
+        "description",
+        "skills_required",
+        "business_unit",
+        "location",
+        "seniority_level",
+        "open_from_date",
+        "open_to_date"
+      ],
+      "interaction_logs": [
+        "timestamp",
+        "employee_id",
+        "item_id",
+        "item_type (learning/project/role)",
+        "event_type (impression/click/enroll/complete/apply/dismiss)",
+        "experiment_arm (baseline/treatment)",
+        "recommendation_rank",
+        "explanation_shown (boolean)"
+      ]
+    },
+    "infrastructure": {
+      "application_layer": "Web-based or intranet portal with authenticated employee access and the ability to render recommendations via API.",
+      "services": [
+        "Baseline recommendation service endpoint.",
+        "Treatment recommendation service endpoint with embedding lookup and scoring.",
+        "Experiment assignment service (feature flag / A/B testing platform) supporting employee_id-based bucketing."
+      ],
+      "storage_and_computing": [
+        "Relational or columnar data store for employee and catalog metadata.",
+        "Graph database or equivalent structure (optional but recommended) for the skills graph.",
+        "Computation environment for training embeddings (e.g., Python environment with libraries like pandas, numpy, scikit-learn, PyTorch or TensorFlow; or equivalent)."
+      ],
+      "analytics_stack": [
+        "Data warehouse or lake for experiment logs (e.g., SQL-capable).",
+        "Dashboarding/BI tool to visualize metrics by arm and segment.",
+        "Statistical analysis environment (e.g., Python/R notebooks) for experiment evaluation."
+      ]
+    },
+    "governance_and_compliance": {
+      "approvals": [
+        "People analytics lead and CHRO consent for experimentation on employees.",
+        "Legal and data privacy review for use of demographic data in fairness analysis.",
+        "Works council/union consultation where required by jurisdiction."
+      ],
+      "policies": [
+        "Clear documentation that recommendations are advisory, not determinative for performance management.",
+        "Data retention policy for logs and models.",
+        "Employee-facing privacy notice describing data usage and the existence of recommendation algorithms."
+      ]
+    }
+  },
+  "run_instructions": {
+    "1_data_preparation": [
+      "Extract employee, catalog, and interaction data according to the required schema and store in a secure analytics environment.",
+      "Normalize skills identifiers across systems (HRIS, LMS, project systems) into a unified skills ontology.",
+      "Construct the skills graph using nodes (skills, employees, items, projects, roles) and edges (HAS_SKILL, REQUIRES_SKILL, LEARNED_FROM, APPLIED_TO, SIMILAR_TO).",
+      "Validate data completeness (e.g., percentage of items with skills_required, percentage of employees with at least one skill) and resolve critical gaps before proceeding."
+    ],
+    "2_model_and_baseline_implementation": [
+      "Implement the baseline rule-based recommender as a stateless function or microservice using the matching strategy described in the baseline section.",
+      "In the companion repository, provide a reference implementation (e.g., Python + SQL) that can be adapted to the organization\u2019s environment.",
+      "For the treatment, train embeddings using either graph-based methods (e.g., Node2Vec) or collaborative filtering, following code patterns in the repository.",
+      "Persist embeddings for employees and catalog items in a lookup store accessible to the treatment recommendation service."
+    ],
+    "3_experiment_design_and_assignment": [
+      "Define the target employee population (e.g., knowledge workers in selected BUs) and apply exclusion criteria.",
+      "Choose randomization ratios (default 50/50) and stratification variables (e.g., BU, region, seniority).",
+      "Configure the experiment in the feature flag or A/B testing platform to assign each employee_id to baseline or treatment persistently.",
+      "Simulate assignment on historical data to validate balance across strata."
+    ],
+    "4_integration_and_ui": [
+      "Expose a unified recommendations API that accepts (employee_id, context) and routes to baseline or treatment service based on experiment assignment.",
+      "Ensure the UI for recommendations is identical for both groups except for the underlying algorithm, including positions, labels, and call-to-action buttons.",
+      "Implement logging hooks to capture all required interaction events, including experiment arm and recommendation rank.",
+      "Add optional unobtrusive prompts in the UI to capture employee_relevance_rating and explanation_trust_rating."
+    ],
+    "5_pilot_execution": [
+      "Soft-launch the experiment with a small internal group (e.g., one BU) to validate end-to-end data flow and logging for 3\u20135 days.",
+      "Check that assignment proportions and stratification are as expected.",
+      "Verify that mandatory items, business rules, and pinned items behave identically in both arms.",
+      "If checks pass, expand to full targeted population and start the formal experiment clock."
+    ],
+    "6_monitoring_during_run": [
+      "Daily (or weekly) monitor core safety metrics by arm (e.g., mandatory training completion, system errors, override_rate).",
+      "Weekly, compute preliminary engagement metrics (CTR, completion) and fairness gaps for internal monitoring only (no peeking-driven changes unless risk thresholds are breached).",
+      "Log and investigate any significant system failures or spikes in override_rate or negative feedback."
+    ],
+    "7_post_experiment_analysis": [
+      "After reaching the predetermined sample size and minimum duration, freeze the experiment and extract interaction logs by arm.",
+      "Compute all defined metrics overall and stratified by key segments.",
+      "Perform statistical tests (e.g., difference-in-proportions z-tests for CTR and completion, t-tests or non-parametric tests for ratings) to estimate effect sizes and confidence intervals.",
+      "Evaluate fairness constraints and override_rate, and document whether success criteria are met.",
+      "Prepare an executive summary with performance vs. baseline, fairness outcomes, and recommended next steps (scale, iterate, or revert)."
+    ],
+    "8_reproducibility_and_repository": [
+      "Use the companion repository (https://github.com/bookauthority/ai-executive-upskilling-playbook) to version-control all experiment code: data preparation scripts, model training notebooks, recommendation services, and analysis notebooks.",
+      "Store experiment configuration (e.g., randomization seeds, feature sets, hyperparameters) in a machine-readable config file (e.g., YAML or JSON) checked into the repo.",
+      "Document each experiment run with an experiment_id, date range, population description, and links to dashboards or analysis notebooks.",
+      "Ensure all scripts can be re-run on a synthetic or anonymized dataset to validate the end-to-end pipeline without accessing sensitive real employee data."
+    ]
+  },
+  "evidence_schema": {
+    "entities": {
+      "employee": {
+        "fields": {
+          "employee_id": "string (pseudonymized unique identifier)",
+          "business_unit": "string",
+          "region": "string",
+          "job_family": "string",
+          "current_role": "string",
+          "tenure_months": "integer",
+          "skills": "array of {skill_id: string, proficiency_level: optional integer}",
+          "demographics": "optional object with fields such as gender, age_band where legally permissible and anonymized"
+        }
+      },
+      "catalog_item_learning": {
+        "fields": {
+          "item_id": "string",
+          "title": "string",
+          "description": "string",
+          "skills_required": "array of skill_id strings",
+          "category": "string",
+          "delivery_format": "string",
+          "estimated_duration_minutes": "integer",
+          "is_mandatory": "boolean",
+          "is_strategic": "boolean",
+          "language": "string"
+        }
+      },
+      "catalog_item_project_or_role": {
+        "fields": {
+          "project_or_role_id": "string",
+          "title": "string",
+          "description": "string",
+          "skills_required": "array of skill_id strings",
+          "business_unit": "string",
+          "location": "string",
+          "seniority_level": "string",
+          "open_from_date": "date",
+          "open_to_date": "date"
+        }
+      },
+      "skills_graph": {
+        "nodes": {
+          "skill": {
+            "fields": {
+              "skill_id": "string",
+              "name": "string",
+              "category": "string",
+              "external_reference": "optional string (e.g., ESCO/ONET id)"
+            }
+          },
+          "employee_node": {
+            "reference": "employee.employee_id"
+          },
+          "item_node": {
+            "reference": "catalog_item_learning.item_id or catalog_item_project_or_role.project_or_role_id"
+          }
+        },
+        "edges": {
+          "HAS_SKILL": {
+            "fields": {
+              "employee_id": "string",
+              "skill_id": "string",
+              "proficiency_level": "optional integer",
+              "source": "string (e.g., self_declared, manager_endorsed, inferred)"
+            }
+          },
+          "REQUIRES_SKILL": {
+            "fields": {
+              "item_id": "string",
+              "skill_id": "string"
+            }
+          },
+          "LEARNED_FROM": {
+            "fields": {
+              "employee_id": "string",
+              "item_id": "string",
+              "completion_date": "date"
+            }
+          },
+          "APPLIED_TO": {
+            "fields": {
+              "employee_id": "string",
+              "project_or_role_id": "string",
+              "application_date": "date"
+            }
+          },
+          "SIMILAR_TO": {
+            "fields": {
+              "source_id": "string",
+              "target_id": "string",
+              "similarity_score": "float"
+            }
+          }
+        }
+      },
+      "recommendation_event": {
+        "fields": {
+          "event_id": "string",
+          "timestamp": "datetime",
+          "employee_id": "string",
+          "item_id": "string",
+          "item_type": "string (learning/project/role)",
+          "experiment_id": "string",
+          "experiment_arm": "string (baseline/treatment)",
+          "recommendation_rank": "integer",
+          "algorithm_version": "string",
+          "explanation_text": "optional string",
+          "explanation_features": "optional array of strings (e.g., skill_ids or rationale codes)"
+        }
+      },
+      "interaction_event": {
+        "fields": {
+          "event_id": "string",
+          "timestamp": "datetime",
+          "employee_id": "string",
+          "item_id": "string",
+          "item_type": "string",
+          "event_type": "string (impression/click/enroll/complete/apply/dismiss)",
+          "experiment_id": "string",
+          "experiment_arm": "string",
+          "recommendation_rank": "optional integer",
+          "source": "string (e.g., recommendation_feed, search, manager_share)"
+        }
+      },
+      "feedback_event": {
+        "fields": {
+          "feedback_id": "string",
+          "timestamp": "datetime",
+          "employee_id": "string",
+          "item_id": "optional string",
+          "feedback_type": "string (relevance_rating, explanation_trust, data_issue_flag)",
+          "value_numeric": "optional float (e.g., 1\u20135 rating)",
+          "value_text": "optional string",
+          "experiment_id": "string",
+          "experiment_arm": "string"
+        }
+      }
+    },
+    "derived_metrics_dataset": {
+      "granularity": "per_experiment_arm_per_segment (and overall)",
+      "fields": {
+        "experiment_id": "string",
+        "arm": "string (baseline/treatment)",
+        "segment_dimensions": "object (e.g., {business_unit: 'BU1', gender: 'F'})",
+        "learning_click_through_rate": "float",
+        "learning_completion_rate": "float",
+        "project_application_rate": "float",
+        "internal_role_click_rate": "float",
+        "employee_relevance_rating": "float",
+        "segment_fairness_gap_learning_ctr": "float",
+        "segment_fairness_gap_project_access": "float",
+        "explanation_coverage_rate": "float",
+        "explanation_trust_rating": "float",
+        "override_rate": "float",
+        "time_to_first_engagement": "float",
+        "sample_sizes": {
+          "employees": "integer",
+          "impressions": "integer",
+          "clicks": "integer",
+          "completions": "integer"
+        },
+        "confidence_intervals": "object (e.g., per metric 95% CI)",
+        "statistical_tests": "object (e.g., p-values and effect sizes comparing arms)"
+      }
+    },
+    "reproducibility_requirements": [
+      "All transformations from raw entities to derived_metrics_dataset must be defined in versioned scripts or pipelines in the companion repository.",
+      "Configuration for a given experiment (e.g., time window, inclusion criteria, segment definitions) must be captured in a machine-readable config file associated with the experiment_id.",
+      "Synthetic or anonymized example datasets following this schema should be included in the repository to allow dry-run execution of the analysis pipelines without production data."
+    ]
+  }
+}

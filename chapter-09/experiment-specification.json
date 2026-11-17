@@ -1,0 +1,752 @@
+{
+  "experiment_id": "exp-09-exec-ai-upskilling-measurement-framework-v1",
+  "hypothesis": "Implementing a rigorously designed experimentation and measurement framework for autonomous upskilling (including defined success metrics, controlled A/B tests on learning experiences, cohort-based longitudinal tracking, and executive dashboards) will lead to measurably better business-aligned learning outcomes\u2014specifically higher skill attainment, improved on-the-job performance, and stronger program-level ROI\u2014than operating with ad-hoc pilots and activity-based reporting alone.",
+  "baseline": {
+    "description": "Current-state \u2018pilot and activity reporting\u2019 model: executives receive periodic dashboards focused on participation and satisfaction (completion rates, hours learned, NPS) without causal evidence of impact or disciplined experimental design.",
+    "key_characteristics": [
+      "Learning initiatives launched as one-off pilots without formal control groups or randomization.",
+      "Success judged primarily on activity metrics (enrollments, completions, CSAT/NPS) and anecdotal feedback.",
+      "Limited or no linkage between learning data and downstream business KPIs (productivity, quality, revenue, risk).",
+      "No standardized cohort definitions or longitudinal tracking of individual skill growth over time.",
+      "Executive dashboards show descriptive statistics only (counts, trends) with no experimental results or confidence intervals.",
+      "Experimentation, where present, is informal (before/after comparisons, uncontrolled comparisons across teams)."
+    ],
+    "implementation_notes": [
+      "Use historical data from the past 6\u201312 months where the organization has run AI upskilling initiatives without proper experiments.",
+      "Recreate a baseline executive dashboard with the same metrics and visualization style currently in use (activity and sentiment only).",
+      "Document data sources (LMS, HRIS, performance systems) and transformations used in the baseline reporting pipeline."
+    ]
+  },
+  "treatment": {
+    "description": "Disciplined experimentation and measurement framework for AI-driven autonomous upskilling, combining A/B and multivariate tests, standardized success metrics, cohort and longitudinal analyses, and executive-ready dashboards that connect learning interventions to business outcomes.",
+    "components": [
+      "Formal experiment design templates (including problem statement, hypothesis, units of randomization, power calculations, and analysis plan).",
+      "Randomized A/B and multivariate experiments applied to learning experiences and AI-driven interventions (e.g., recommendation algorithms, nudges, copilot features).",
+      "Unified success metric framework connecting skills data, learning data, and business KPIs.",
+      "Cohort analysis and longitudinal tracking of learner skill profiles and performance outcomes.",
+      "Executive dashboards that surface experiment results (effect sizes, confidence intervals, sample sizes) and program health indicators.",
+      "Governance mechanisms for experiment approvals, ethical review, and decision-making based on evidence."
+    ],
+    "differences_from_baseline": [
+      "Moves from descriptive to causal inference: experiments with explicit control groups and randomization instead of pilots and before/after comparisons.",
+      "Shifts success definition from activity and satisfaction to business-relevant outcomes (skill acquisition, productivity, quality, revenue, risk reduction).",
+      "Introduces persistent learner cohorts and longitudinal skill tracking versus one-off pilot snapshots.",
+      "Replaces static dashboards with experiment-aware executive views that surface impact estimates, uncertainty, and key trade-offs.",
+      "Institutes a repeatable operating rhythm (experiment backlogs, reviews, stopping rules) rather than ad-hoc one-off tests."
+    ]
+  },
+  "workloads": [
+    {
+      "name": "Workload 1: Learning Experience Variant Testing (A/B)",
+      "description": "Randomized experiment comparing a baseline AI-driven learning experience against an enhanced version that incorporates additional personalization and performance-linked nudges.",
+      "unit_of_assignment": "Individual employees who are eligible for the AI upskilling program and access the learning platform within the enrollment window.",
+      "baseline_variant": {
+        "label": "A0 - Current Autonomous Learning Experience",
+        "description": "Existing AI upskilling experience, including standard content recommendations based on role and skills, messaging, and progress reminders as currently implemented.",
+        "key_elements": [
+          "Static recommendation model driven primarily by role and declared skills.",
+          "Weekly email reminders for incomplete learning pathways.",
+          "Standard course catalog page without contextual performance prompts.",
+          "No targeted nudges tied to on-the-job performance metrics."
+        ]
+      },
+      "treatment_variant": {
+        "label": "B1 - Enhanced Personalized and Performance-Linked Experience",
+        "description": "Updated AI upskilling experience with additional personalization signals and targeted nudges linked to role-specific performance outcomes.",
+        "key_elements": [
+          "Recommendation model incorporates observed behavior (content consumption, assessment performance) and skills ontology proximity.",
+          "Nudges triggered by performance or productivity signals (e.g., CRM activity, ticket quality scores) where available and ethically approved.",
+          "Personalized landing page highlighting skills most correlated with improved performance in similar roles.",
+          "Adaptive reminder cadence based on engagement patterns rather than fixed weekly schedule."
+        ]
+      },
+      "randomization_scheme": {
+        "method": "Individual-level randomization with stratification by business unit and role family.",
+        "allocation_ratio": "50:50 (A0:B1) within each stratum.",
+        "eligibility_criteria": [
+          "Employed in target roles identified for AI upskilling (e.g., sales reps, customer support, operations analysts).",
+          "At least 6 months tenure to ensure baseline performance data is available.",
+          "No active performance improvement plan to avoid ethical issues and confounding factors."
+        ]
+      },
+      "duration": {
+        "ramp_up": "2 weeks to ramp traffic and validate assignment logic.",
+        "measurement": "10\u201312 weeks of active observation to accumulate meaningful learning and performance data.",
+        "follow_up": "Additional 8\u201312 weeks for lagged business outcome measurement where feasible (e.g., quota attainment, quality scores)."
+      }
+    },
+    {
+      "name": "Workload 2: Recommendation Algorithm Comparison (Multivariate / Multi-Arm)",
+      "description": "Online experiment comparing multiple AI recommendation strategies within the autonomous learning system to optimize skill progression and engagement.",
+      "unit_of_assignment": "Individual learning sessions initiated by eligible employees, with user-level stickiness applied (same user stays on same arm).",
+      "baseline_variant": {
+        "label": "R0 - Heuristic Role-Based Model",
+        "description": "Current simple rule-based recommendation algorithm using role, level, and manager-prioritized skills.",
+        "key_elements": [
+          "Content ranked based on static mapping of role \u2192 required skills \u2192 top courses.",
+          "Minimal personalization beyond job title and region.",
+          "No exploration of new content types or skills clusters."
+        ]
+      },
+      "treatment_variants": [
+        {
+          "label": "R1 - Skills-Graph Similarity Model",
+          "description": "Recommendations based on proximity in the enterprise skills graph and peer learning patterns.",
+          "key_elements": [
+            "Uses learned embedding space over skills and content objects.",
+            "Factors in skills demonstrated through previous assessments and projects.",
+            "Promotes content consumed by high-performing peers in similar roles."
+          ]
+        },
+        {
+          "label": "R2 - Contextual Bandit Model with Exploration",
+          "description": "A contextual bandit approach balancing exploitation of historically effective content with structured exploration.",
+          "key_elements": [
+            "Incorporates context features (role, region, tenure, recent performance) as model inputs.",
+            "Explicit exploration rate to test new or long-tail content items.",
+            "Online learning updates using click-through and completion signals."
+          ]
+        }
+      ],
+      "randomization_scheme": {
+        "method": "User-level randomized assignment to one of three arms (R0, R1, R2), sticky for duration of experiment.",
+        "allocation_ratio": "1:1:1 initially, with optional reallocation after interim analysis if allowed by governance.",
+        "eligibility_criteria": [
+          "Users who log in to the autonomous learning platform at least once during enrollment period.",
+          "Consent and communication aligned with data privacy requirements."
+        ]
+      },
+      "duration": {
+        "ramp_up": "1\u20132 weeks to verify algorithm integration and logging.",
+        "measurement": "8\u201310 weeks of live traffic to accumulate engagement and skill progression data."
+      }
+    },
+    {
+      "name": "Workload 3: Cohort and Longitudinal Skill Growth Tracking",
+      "description": "Non-randomized but structured observational workload tracking cohorts over time to evaluate cumulative impact of AI upskilling on skill levels and downstream business outcomes.",
+      "unit_of_observation": "Employee-level trajectories nested within defined cohorts (e.g., intake quarter, role, business unit).",
+      "cohort_definitions": [
+        {
+          "label": "Cohort-Q1",
+          "description": "Employees entering the AI upskilling program in Q1 of the fiscal year, in specified target roles.",
+          "entry_criteria": [
+            "Completion of initial skills assessment within Q1.",
+            "At least one learning pathway activated within Q1."
+          ]
+        },
+        {
+          "label": "Cohort-Q2",
+          "description": "Equivalent employees entering in Q2, used for replication and temporal comparison.",
+          "entry_criteria": [
+            "Same as Cohort-Q1 but with Q2 window."
+          ]
+        }
+      ],
+      "comparison_groups": [
+        {
+          "label": "Matched Non-Participant Comparison Group",
+          "description": "Employees in similar roles who did not participate in the AI upskilling program during the same periods, matched on key covariates (role, region, tenure, baseline performance).",
+          "matching_method": "Propensity score matching or exact matching on discrete variables using people analytics tooling."
+        }
+      ],
+      "tracking_period": {
+        "skills": "Monthly skill profile updates over 6\u201312 months.",
+        "business_outcomes": "Quarterly aggregation of performance metrics over 4\u20136 quarters, depending on data availability."
+      }
+    }
+  ],
+  "controls": {
+    "randomization_checks": [
+      "Pre-experiment balance test comparing baseline covariates (role, region, tenure, prior performance, prior learning activity) across treatment and control arms.",
+      "If imbalances detected, adjust analysis using covariate adjustment or re-randomization before launch."
+    ],
+    "eligibility_and_inclusion": [
+      "Define clear inclusion/exclusion rules at the employee and team level to avoid selection bias (e.g., exclude teams under reorganization, restructurings, or major incentive plan changes).",
+      "Lock eligibility criteria prior to randomization and document any deviations."
+    ],
+    "blinding_and_bias_reduction": [
+      "Where feasible, avoid explicitly labeling users as being in a test group; describe interventions in value-centric language that applies to all.",
+      "Ensure analysts conducting primary analysis are blinded to which arm is expected to perform better (use coded variants) until after the analysis scripts are finalized."
+    ],
+    "operational_invariants": [
+      "No major changes to compensation plans, quotas, performance rating distributions, or job definitions during the core measurement window; if unavoidable, log changes as potential confounders.",
+      "Keep content library changes minimal and symmetric across variants; log any additions/removals with timestamps.",
+      "Avoid overlapping experiments that target the same population and outcomes without a pre-agreed experimental design (e.g., factorial) to manage interaction effects."
+    ],
+    "compliance_and_ethics": [
+      "Secure approval from internal ethics/governance bodies where required (e.g., data privacy office, works councils).",
+      "Ensure that no arm reduces access to critical compliance or safety training.",
+      "Provide opt-out mechanisms where mandated by regulation or policy."
+    ]
+  },
+  "metrics": [
+    {
+      "name": "learning_pathway_completion_rate",
+      "definition": "Share of enrolled users who complete at least one designated upskilling pathway within the measurement window.",
+      "unit": "proportion (0\u20131)",
+      "collection_frequency": "weekly aggregation, stored daily at user-level"
+    },
+    {
+      "name": "time_to_skill_attainment",
+      "definition": "Median time between a learner's initial enrollment in a pathway and reaching a predefined skill proficiency level based on assessments or validated signals.",
+      "unit": "days",
+      "collection_frequency": "continuous, evaluated weekly for in-progress and completed learners"
+    },
+    {
+      "name": "skill_proficiency_gain",
+      "definition": "Average increase in measured skill proficiency score for target skills between baseline and end of measurement window.",
+      "unit": "skill score points (0\u2013100 scale or standardized z-score)",
+      "collection_frequency": "monthly skill profile snapshots"
+    },
+    {
+      "name": "engaged_learning_hours",
+      "definition": "Total hours spent on learning activities with evidence of active engagement (e.g., interactions, questions answered), excluding idle time.",
+      "unit": "hours per learner",
+      "collection_frequency": "daily logging, weekly aggregation"
+    },
+    {
+      "name": "on_job_performance_index",
+      "definition": "Composite index of role-relevant performance metrics (e.g., sales revenue, conversion rate, first-contact resolution, defect rate) normalized to a common 0\u20131 scale.",
+      "unit": "index (0\u20131)",
+      "collection_frequency": "monthly or quarterly, depending on data latency"
+    },
+    {
+      "name": "program_roi",
+      "definition": "Net financial return of the upskilling program calculated as (incremental business value attributed to the program \u2013 program costs) / program costs.",
+      "unit": "dimensionless ratio",
+      "collection_frequency": "quarterly and annually"
+    },
+    {
+      "name": "experiment_effect_size",
+      "definition": "Standardized difference in a target metric (e.g., skill_proficiency_gain, on_job_performance_index) between treatment and control, expressed as Cohen's d or percentage lift.",
+      "unit": "standard deviations or percent",
+      "collection_frequency": "computed at pre-defined interim and final analysis points"
+    },
+    {
+      "name": "statistical_significance_flag",
+      "definition": "Indicator of whether the observed effect for a given metric and experiment meets the pre-specified significance threshold.",
+      "unit": "boolean",
+      "collection_frequency": "computed at interim and final analyses"
+    },
+    {
+      "name": "experiment_uptake_rate",
+      "definition": "Percentage of eligible users who actually engage with the experimental feature or learning experience at least once.",
+      "unit": "proportion (0\u20131)",
+      "collection_frequency": "weekly"
+    },
+    {
+      "name": "executive_dashboard_usage",
+      "definition": "Utilization of the experimentation and measurement dashboard by executives (e.g., active users, sessions per week, views of experiment summary pages).",
+      "unit": "sessions per executive per month",
+      "collection_frequency": "monthly"
+    }
+  ],
+  "success_criteria": {
+    "primary": [
+      {
+        "description": "Demonstrated causal improvement in skill acquisition and performance metrics for treatment variants over baseline.",
+        "quantitative_thresholds": [
+          "At least one major experiment (e.g., Workload 1 or 2) shows a statistically significant improvement (p < 0.05 after multiple-testing correction) in skill_proficiency_gain with a minimum effect size of +0.20 standard deviations.",
+          "At least one major experiment shows a statistically significant improvement in on_job_performance_index of at least +3% relative to control."
+        ]
+      }
+    ],
+    "secondary": [
+      {
+        "description": "Evidence that the experimentation and measurement framework itself is being used by senior leaders for decisions.",
+        "quantitative_thresholds": [
+          "executive_dashboard_usage \u2265 2 sessions per month for at least 70% of target senior executive users during the final 8 weeks of the experiment window.",
+          "At least 2 strategic decisions (e.g., scaling a feature, sunsetting a pathway, reallocating budget) documented as explicitly grounded in experiment results."
+        ]
+      },
+      {
+        "description": "Improved efficiency and ROI of upskilling investments.",
+        "quantitative_thresholds": [
+          "program_roi for net-new AI upskilling initiatives launched under the framework is higher than ROI for comparable historical initiatives by at least 10 percentage points, measured over a comparable timeframe, after adjusting for macro conditions where possible."
+        ]
+      }
+    ],
+    "statistical_considerations": [
+      "Pre-specify primary metrics for each experiment to avoid p-hacking (e.g., skill_proficiency_gain for Workload 1, click-through and pathway_completion_rate for Workload 2).",
+      "Use intent-to-treat (ITT) analysis as primary; optionally supplement with per-protocol analyses clearly labeled as exploratory.",
+      "Adjust for multiple comparisons across treatment arms and key metrics using established procedures (e.g., Benjamini-Hochberg FDR control)."
+    ]
+  },
+  "failure_modes": [
+    {
+      "label": "FM1 - Underpowered Experiments",
+      "description": "Sample sizes are too small, experiment duration too short, or effect sizes overestimated, leading to inconclusive or noisy results.",
+      "mitigations": [
+        "Require power calculations during experiment design; target at least 80% power for minimally important effect sizes.",
+        "Avoid fragmenting traffic across too many experimental arms simultaneously.",
+        "Extend experiment duration where feasible rather than stopping early without clear results."
+      ]
+    },
+    {
+      "label": "FM2 - Contamination and Non-Compliance",
+      "description": "Employees assigned to control conditions get access to treatment features indirectly, or do not engage with assigned treatment, biasing results toward null.",
+      "mitigations": [
+        "Use technical feature flags and access controls to separate arms where possible.",
+        "Monitor cross-arm exposure through logs; estimate contamination and adjust analysis if necessary.",
+        "Track engagement (experiment_uptake_rate) and consider complier-average causal effect (CACE) analysis for secondary views."
+      ]
+    },
+    {
+      "label": "FM3 - Confounding Organizational Changes",
+      "description": "Simultaneous changes (e.g., compensation revision, new CRM system, major reorganization) affect performance outcomes, confounding attribution of results.",
+      "mitigations": [
+        "Time experiments to avoid known large-scale changes where possible.",
+        "Document all material organizational changes and incorporate dummy variables or segmented analyses in models.",
+        "Focus primary attribution on short-horizon outcomes less likely to be affected by external changes."
+      ]
+    },
+    {
+      "label": "FM4 - Misinterpretation of Correlation as Causation",
+      "description": "Executives or stakeholders draw causal conclusions from cohort or longitudinal correlations that are not experimentally identified.",
+      "mitigations": [
+        "Clearly label all charts and tables as experimental (causal) or observational.",
+        "Include uncertainty intervals and disclaimers on observational analyses.",
+        "Provide executive education materials (e.g., 1-page primer) on causality vs. correlation, embedded in the dashboard."
+      ]
+    },
+    {
+      "label": "FM5 - Incentive Distortion and Gaming",
+      "description": "Managers or employees game metrics used in dashboards (e.g., over-reporting learning hours or targeting only \u2018easy\u2019 skills) to look good rather than create real value.",
+      "mitigations": [
+        "Favor outcome metrics that are harder to game (e.g., independent performance metrics, third-party assessments).",
+        "Include qualitative review and spot audits for anomalies.",
+        "Avoid tying individual-level compensation directly to intermediate learning metrics without safeguards."
+      ]
+    },
+    {
+      "label": "FM6 - Privacy or Trust Backlash",
+      "description": "Employees react negatively to perceived surveillance or opaque use of their data in experiments and measurement.",
+      "mitigations": [
+        "Communicate clearly and transparently about what is being measured and why, with emphasis on development, not surveillance.",
+        "Implement strong anonymization and aggregation for reporting, especially at executive level.",
+        "Engage works councils, legal, and HR early; include opt-out options where feasible and legally required."
+      ]
+    }
+  ],
+  "required_environment": {
+    "data_infrastructure": [
+      "Access to core HRIS, LMS/LXP, and performance systems, ideally integrated in a data warehouse or lake with user-level keys.",
+      "Skills assessment data and/or inferred skills profiles linked to individuals and updated at least monthly.",
+      "Logging from AI recommendation engines and learning platforms with event-level detail (impressions, clicks, completions)."
+    ],
+    "platform_capabilities": [
+      "Ability to implement feature flags or experiment configuration (e.g., via an experimentation platform or custom assignment service).",
+      "APIs or configuration interfaces to adjust learning experiences, recommendation models, and nudges per user or cohort.",
+      "BI/analytics environment (e.g., SQL + Python/R + dashboarding tool) capable of reproducible analysis and secure sharing."
+    ],
+    "governance_and_approvals": [
+      "Data protection and privacy approvals for using employee data in experiments and longitudinal analyses.",
+      "Experiment review process including HR, people analytics, and legal/ethics where applicable.",
+      "Documented policy on which kinds of experiments are permissible, restricted, or prohibited (especially around sensitive attributes)."
+    ],
+    "organizational_prerequisites": [
+      "Senior executive sponsor for the experimentation program (e.g., CHRO or CDO) and clear decision-use cases.",
+      "People analytics or data team with capacity to co-design, run, and interpret experiments.",
+      "Communication plan to managers and employees explaining the experimentation approach in accessible terms."
+    ],
+    "repository_setup": [
+      "Clone the companion repository: https://github.com/bookauthority/ai-executive-upskilling-playbook.",
+      "Configure environment variables or connection strings for data sources in a secure secrets manager (not in code).",
+      "Install required tooling for the analytics notebooks (e.g., Python 3.x with packages: pandas, numpy, statsmodels, scikit-learn, plotly or matplotlib; or R equivalents)."
+    ]
+  },
+  "run_instructions": [
+    {
+      "step": 1,
+      "title": "Define Executive-Level Use Cases and Metrics (Sections 9.1\u20139.2)",
+      "actions": [
+        "Convene a cross-functional working session (HR, people analytics, business leaders, IT) to prioritize 2\u20133 concrete questions executives want answered via experiments (e.g., 'Does enhanced personalization improve quota attainment for sales?' ).",
+        "Map each use case to primary and secondary metrics from the metric framework (e.g., skill_proficiency_gain, on_job_performance_index, program_roi).",
+        "Document metric definitions and data sources in a shared, version-controlled specification (e.g., YAML/JSON in the repository)."
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Design Initial Experiments and Cohorts (Sections 9.3\u20139.4)",
+      "actions": [
+        "Use the experiment design template in the companion repository (e.g., /experiments/templates/experiment_design.md) to define Workload 1 and Workload 2 experiments, including hypotheses, units of randomization, sample size estimates, and analysis plan.",
+        "Define cohorts for longitudinal tracking (Workload 3), including entry criteria and observation windows; store cohort definitions in code (e.g., SQL views or Python scripts).",
+        "Run power calculations (scripts provided in /analytics/power_calculations) using historical variance estimates to estimate required sample sizes and durations."
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Implement Randomization and Instrumentation",
+      "actions": [
+        "Work with the learning platform and IT teams to implement random assignment logic for Workload 1 and Workload 2 using feature flags or an experimentation service.",
+        "Add or validate logging for key events: treatment assignment, feature exposure, content impressions, clicks, completions, assessment scores, and relevant performance metrics.",
+        "Run a dry-run test in a staging environment to verify correct assignment, instrumentation, and data flow into the analytics environment."
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Launch Experiments and Begin Data Collection",
+      "actions": [
+        "Launch Workload 1 and Workload 2 experiments to eligible populations according to the defined inclusion criteria and ramp-up plan.",
+        "Monitor early data quality using automated checks (e.g., scripts in /analytics/quality_checks) to validate event volumes, assignment balance, and missing data patterns.",
+        "Lock experiment configurations (no mid-stream changes to core logic) except for essential bug fixes that are carefully logged."
+      ]
+    },
+    {
+      "step": 5,
+      "title": "Run Interim Analyses and Adjust if Needed (Section 9.6)",
+      "actions": [
+        "At pre-specified interim checkpoints (e.g., weeks 4 and 8), run analysis notebooks (e.g., /analytics/notebooks/exp_workload1_ab_test.ipynb and exp_workload2_algorithms.ipynb) to generate preliminary effect size estimates and diagnostic plots.",
+        "Check assumptions (e.g., normality, variance homogeneity) and, if violated, use robust or non-parametric methods as indicated in the analysis code.",
+        "Only make adaptations pre-planned in the protocol (e.g., reallocation of traffic in multi-arm tests), and document them in experiment logs."
+      ]
+    },
+    {
+      "step": 6,
+      "title": "Conduct Final Analyses and Longitudinal Cohort Evaluation",
+      "actions": [
+        "After the planned measurement window, freeze data for the experiments and run final analysis scripts that compute treatment effects, confidence intervals, and p-values for primary and secondary metrics.",
+        "Execute cohort and longitudinal scripts (e.g., /analytics/notebooks/longitudinal_skills_and_performance.ipynb) to analyze skill trajectories and business outcomes across cohorts and matched comparison groups.",
+        "Export standardized result objects (following evidence_schema) for all experiments and cohorts."
+      ]
+    },
+    {
+      "step": 7,
+      "title": "Build and Publish Executive Dashboards (Section 9.5)",
+      "actions": [
+        "Use the provided dashboard specification (e.g., /dashboards/specs/exec_experiment_dashboard.json) to configure visualizations in your BI tool of choice.",
+        "Include sections for: program overview, active experiments, completed experiments with impact summaries, cohort trends, and ROI estimates.",
+        "Pilot the dashboard with a small group of executives, collect feedback on clarity and decision usefulness, and iterate once before broader rollout."
+      ]
+    },
+    {
+      "step": 8,
+      "title": "Institutionalize Experimentation and Evidence Use",
+      "actions": [
+        "Integrate experimentation review into existing governance rhythms (e.g., quarterly talent councils, digital steering committees).",
+        "Create a lightweight 'Experiments to Commission' backlog aligned with strategic priorities; review and reprioritize regularly.",
+        "Train senior leaders and their chiefs of staff on reading experiment outputs, understanding uncertainty, and distinguishing causal vs. correlational evidence."
+      ]
+    }
+  ],
+  "evidence_schema": {
+    "description": "Standardized structure for storing and communicating evidence from experiments, cohort analyses, and longitudinal tracking to executives and stakeholders.",
+    "version": "1.0.0",
+    "entities": {
+      "experiment": {
+        "fields": [
+          {
+            "name": "experiment_id",
+            "type": "string",
+            "description": "Unique identifier for the experiment (e.g., 'exp_workload1_learning_experience_v1')."
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "description": "Human-readable name for the experiment."
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "description": "Brief summary of what is being tested and why."
+          },
+          {
+            "name": "hypothesis",
+            "type": "string",
+            "description": "Formal statement of the expected effect."
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "allowed_values": [
+              "planned",
+              "running",
+              "completed",
+              "cancelled"
+            ],
+            "description": "Lifecycle status of the experiment."
+          },
+          {
+            "name": "start_date",
+            "type": "date",
+            "description": "Date when experiment began assigning users."
+          },
+          {
+            "name": "end_date",
+            "type": "date",
+            "description": "Date when experiment stopped assigning users (or planned end for 'planned')."
+          },
+          {
+            "name": "unit_of_randomization",
+            "type": "string",
+            "description": "Level at which randomization occurred (e.g., user, team)."
+          },
+          {
+            "name": "arms",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "fields": [
+                {
+                  "name": "arm_id",
+                  "type": "string",
+                  "description": "Internal identifier for the arm (e.g., 'control', 'treatment_A')."
+                },
+                {
+                  "name": "label",
+                  "type": "string",
+                  "description": "Display label for the arm."
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "description": "Summary of what differentiates this arm."
+                }
+              ]
+            },
+            "description": "List of experimental arms and their characteristics."
+          }
+        ]
+      },
+      "metric_result": {
+        "fields": [
+          {
+            "name": "experiment_id",
+            "type": "string",
+            "description": "Link to the associated experiment."
+          },
+          {
+            "name": "metric_name",
+            "type": "string",
+            "description": "Name of the metric (must align with metric catalog)."
+          },
+          {
+            "name": "arm_id",
+            "type": "string",
+            "description": "Identifier of the experimental arm for which this metric is reported."
+          },
+          {
+            "name": "point_estimate",
+            "type": "number",
+            "description": "Estimated average value of the metric for this arm (e.g., proportion, mean)."
+          },
+          {
+            "name": "standard_error",
+            "type": "number",
+            "description": "Standard error of the point estimate."
+          },
+          {
+            "name": "confidence_interval",
+            "type": "object",
+            "fields": [
+              {
+                "name": "lower",
+                "type": "number"
+              },
+              {
+                "name": "upper",
+                "type": "number"
+              },
+              {
+                "name": "level",
+                "type": "number",
+                "description": "Confidence level (e.g., 0.95)."
+              }
+            ],
+            "description": "Confidence interval around the estimate."
+          },
+          {
+            "name": "sample_size",
+            "type": "integer",
+            "description": "Number of units (e.g., users) contributing to this estimate."
+          },
+          {
+            "name": "analysis_population",
+            "type": "string",
+            "allowed_values": [
+              "ITT",
+              "per_protocol",
+              "as_treated"
+            ],
+            "description": "Population used for this estimate (intent-to-treat, per-protocol, etc.)."
+          }
+        ]
+      },
+      "effect_estimate": {
+        "fields": [
+          {
+            "name": "experiment_id",
+            "type": "string",
+            "description": "Associated experiment."
+          },
+          {
+            "name": "metric_name",
+            "type": "string",
+            "description": "Name of the metric."
+          },
+          {
+            "name": "comparison",
+            "type": "string",
+            "description": "Description of the comparison, e.g., 'treatment_A vs control'."
+          },
+          {
+            "name": "relative_lift",
+            "type": "number",
+            "description": "Percentage difference relative to control (e.g., 0.05 for +5%)."
+          },
+          {
+            "name": "absolute_difference",
+            "type": "number",
+            "description": "Absolute difference in metric units between arms."
+          },
+          {
+            "name": "standard_error",
+            "type": "number",
+            "description": "Standard error of the difference."
+          },
+          {
+            "name": "confidence_interval",
+            "type": "object",
+            "fields": [
+              {
+                "name": "lower",
+                "type": "number"
+              },
+              {
+                "name": "upper",
+                "type": "number"
+              },
+              {
+                "name": "level",
+                "type": "number"
+              }
+            ],
+            "description": "Confidence interval for the effect size."
+          },
+          {
+            "name": "p_value",
+            "type": "number",
+            "description": "P-value testing the null hypothesis of no difference."
+          },
+          {
+            "name": "significant",
+            "type": "boolean",
+            "description": "Whether the effect meets pre-specified significance criteria."
+          }
+        ]
+      },
+      "cohort_summary": {
+        "fields": [
+          {
+            "name": "cohort_id",
+            "type": "string",
+            "description": "Identifier for the cohort (e.g., 'Cohort-Q1-sales')."
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "description": "Narrative description of the cohort definition."
+          },
+          {
+            "name": "size",
+            "type": "integer",
+            "description": "Number of individuals in the cohort."
+          },
+          {
+            "name": "entry_period",
+            "type": "object",
+            "fields": [
+              {
+                "name": "start_date",
+                "type": "date"
+              },
+              {
+                "name": "end_date",
+                "type": "date"
+              }
+            ],
+            "description": "Time window in which individuals entered the cohort."
+          },
+          {
+            "name": "key_metrics",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "fields": [
+                {
+                  "name": "metric_name",
+                  "type": "string"
+                },
+                {
+                  "name": "baseline_value",
+                  "type": "number"
+                },
+                {
+                  "name": "latest_value",
+                  "type": "number"
+                },
+                {
+                  "name": "change",
+                  "type": "number",
+                  "description": "Difference between latest and baseline values."
+                }
+              ]
+            },
+            "description": "Summary of key metrics over the observation window."
+          }
+        ]
+      },
+      "executive_decision_record": {
+        "fields": [
+          {
+            "name": "decision_id",
+            "type": "string",
+            "description": "Unique identifier for the decision."
+          },
+          {
+            "name": "date",
+            "type": "date",
+            "description": "Date when the decision was made."
+          },
+          {
+            "name": "decision_type",
+            "type": "string",
+            "description": "Category such as 'scale_feature', 'stop_initiative', 'reallocate_budget'."
+          },
+          {
+            "name": "summary",
+            "type": "string",
+            "description": "Short description of the decision."
+          },
+          {
+            "name": "evidence_references",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "fields": [
+                {
+                  "name": "experiment_id",
+                  "type": "string",
+                  "nullable": true
+                },
+                {
+                  "name": "cohort_id",
+                  "type": "string",
+                  "nullable": true
+                },
+                {
+                  "name": "metric_names",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "description": "Links to experiments, cohorts, and metrics that informed the decision."
+          }
+        ]
+      }
+    }
+  }
+}
